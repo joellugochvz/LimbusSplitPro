@@ -1,3 +1,6 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
 namespace LimbusSplitPro.Core.Models;
 
 public enum StemGroup
@@ -12,19 +15,30 @@ public enum StemGroup
     Custom
 }
 
-public class StemCategory
+public class StemCategory : INotifyPropertyChanged
 {
     public string Id { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public StemGroup Group { get; set; }
-    public bool IsSelected { get; set; }
+
+    private bool _isSelected;
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set { if (_isSelected != value) { _isSelected = value; OnPropertyChanged(); } }
+    }
+
     public bool IsAvailable { get; set; } = true;
     public string UnavailableReason { get; set; } = string.Empty;
     public string IconKey { get; set; } = "AudioTrack";
     public string DefaultColorHex { get; set; } = "#0078D4";
     public bool IsSubStem { get; set; }
     public string? ParentCategoryKey { get; set; }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? name = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
     public static List<StemCategory> CreateDefaultCategories()
     {

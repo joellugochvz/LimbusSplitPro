@@ -32,17 +32,45 @@
 
                 <!-- Transport Controls -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Play/Pause: Cyan circle -->
                     <Button Command="{Binding PlayPauseCommand}" Width="36" Height="36" Padding="0" Margin="0,0,6,0" Cursor="Hand">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
-                                <Border Background="#00F0FF" CornerRadius="18">
+                                <Border x:Name="playBorder" Background="#00F0FF" CornerRadius="18">
                                     <TextBlock Text="{Binding IsPlaying, Converter={StaticResource PlayPauseIconConverter}, FallbackValue='▶'}" FontSize="14" Foreground="#0A0A0F" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" />
                                 </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="playBorder" Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#00F0FF" BlurRadius="12" ShadowDepth="0" Opacity="0.5" />
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
                             </ControlTemplate>
                         </Button.Template>
                     </Button>
-                    <Button Command="{Binding StopCommand}" Style="{StaticResource FluentSecondaryButtonStyle}" Width="36" Height="36" Padding="0">
-                        <TextBlock Text="⏹" FontSize="14" />
+
+                    <!-- Stop: Red circle -->
+                    <Button Command="{Binding StopCommand}" Width="36" Height="36" Padding="0" Margin="0,0,6,0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="stopBorder" Background="#2A1215" CornerRadius="18" BorderBrush="#EF4444" BorderThickness="1.5">
+                                    <Border Width="12" Height="12" Background="#EF4444" CornerRadius="2" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="stopBorder" Property="Background" Value="#3D1519" />
+                                        <Setter TargetName="stopBorder" Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#EF4444" BlurRadius="10" ShadowDepth="0" Opacity="0.4" />
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
                     </Button>
                 </StackPanel>
 
@@ -57,7 +85,27 @@
 
                 <!-- Export & Folder Buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="💾 Exportar Mezcla" Style="{StaticResource FluentSecondaryButtonStyle}" Command="{Binding ExportMixCommand}" Padding="10,6" FontSize="11" Margin="0,0,6,0" />
+                    <!-- Exportar Mezcla: Cyan styled -->
+                    <Button Command="{Binding ExportMixCommand}" Padding="12,6" Margin="0,0,6,0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="exportBorder" Background="#0A1A1F" CornerRadius="8" BorderBrush="#00F0FF" BorderThickness="1.5" Padding="{TemplateBinding Padding}">
+                                    <TextBlock Text="💾 Exportar Mezcla" FontSize="11" Foreground="#00F0FF" FontWeight="SemiBold" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="exportBorder" Property="Background" Value="#0D2A32" />
+                                        <Setter TargetName="exportBorder" Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#00F0FF" BlurRadius="10" ShadowDepth="0" Opacity="0.3" />
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
                     <Button Content="📁 Abrir Carpeta" Style="{StaticResource FluentSecondaryButtonStyle}" Command="{Binding OpenOutputFolderCommand}" Padding="10,6" FontSize="11" />
                 </StackPanel>
             </Grid>

@@ -12,12 +12,13 @@
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- Section 01 · MEZCLA -->
                 <!-- ═══════════════════════════════════════════ -->
-                <TextBlock Text="01 · MEZCLA" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,10"  />
+                <TextBlock Text="01 · MEZCLA" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,10" />
 
-                <!-- Drop Zone -->
+                <!-- Drop Zone (visible when NO file loaded) -->
                 <Border Background="#12141A" CornerRadius="12" BorderBrush="#1E2230" BorderThickness="1" Padding="20" Margin="0,0,0,8"
-                        AllowDrop="True" Drop="OnDropZoneDrop" DragOver="OnDropZoneDragOver">
-                    <StackPanel HorizontalAlignment="Center" Visibility="{Binding SelectedInputFilePath, Converter={StaticResource InverseBoolToVisibilityConverter}, ConverterParameter=string}">
+                        AllowDrop="True" Drop="OnDropZoneDrop" DragOver="OnDropZoneDragOver"
+                        Visibility="{Binding SelectedInputFilePath, Converter={StaticResource StringEmptyToVisibilityConverter}}">
+                    <StackPanel HorizontalAlignment="Center">
                         <TextBlock Text="🎵" FontSize="28" HorizontalAlignment="Center" Margin="0,0,0,8" />
                         <TextBlock Text="Suelta aquí tu mezcla" Foreground="White" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,4" />
                         <TextBlock Text="WAV, MP3 o FLAC" Foreground="#6B7280" FontSize="11" HorizontalAlignment="Center" Margin="0,0,0,12" />
@@ -25,9 +26,9 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Loaded file info -->
+                <!-- Loaded file info (visible when file IS loaded) -->
                 <Border Background="#12141A" CornerRadius="10" Padding="12" Margin="0,0,0,20"
-                        Visibility="{Binding InputFileInfo, Converter={StaticResource BoolToVisibilityConverter}}">
+                        Visibility="{Binding SelectedInputFilePath, Converter={StaticResource StringNotEmptyToVisibilityConverter}}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -41,7 +42,8 @@
                             <TextBlock Text="{Binding InputFileInfo.FileName}" Foreground="White" FontWeight="SemiBold" FontSize="12" TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding InputFileInfo.FormattedFormat}" Foreground="#6B7280" FontSize="10" />
                         </StackPanel>
-                        <TextBlock Grid.Column="2" Text="✓" Foreground="#00F0FF" FontSize="16" VerticalAlignment="Center" />
+                        <Button Grid.Column="2" Content="✕" Click="OnSelectInputFileClick" VerticalAlignment="Center"
+                                Background="Transparent" BorderThickness="0" Foreground="#6B7280" FontSize="14" Cursor="Hand" Padding="4" ToolTip="Cambiar archivo" />
                     </Grid>
                 </Border>
 
@@ -49,14 +51,14 @@
                 <!-- Section 02 · QUÉ EXTRAER -->
                 <!-- ═══════════════════════════════════════════ -->
                 <Grid Margin="0,0,0,10">
-                    <TextBlock Text="02 · QUÉ EXTRAER" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" VerticalAlignment="Center"  />
+                    <TextBlock Text="02 · QUÉ EXTRAER" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" VerticalAlignment="Center" />
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Todas" Style="{StaticResource FluentSecondaryButtonStyle}" Command="{Binding StemSelection.SelectAllCommand}" Padding="8,4" FontSize="10" Margin="0,0,4,0" />
-                        <Button Content="Ninguna" Style="{StaticResource FluentSecondaryButtonStyle}" Command="{Binding StemSelection.SelectNoneCommand}" Padding="8,4" FontSize="10" />
+                        <Button Content="Todas" Style="{StaticResource FluentSecondaryButtonStyle}" Click="OnSelectAllClick" Padding="8,4" FontSize="10" Margin="0,0,4,0" />
+                        <Button Content="Ninguna" Style="{StaticResource FluentSecondaryButtonStyle}" Click="OnSelectNoneClick" Padding="8,4" FontSize="10" />
                     </StackPanel>
                 </Grid>
 
-                <!-- Stems Grid (2 columns) -->
+                <!-- Stems Grid (2 columns) — entire card is clickable -->
                 <ItemsControl ItemsSource="{Binding StemSelection.Categories}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -65,7 +67,8 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="#12141A" CornerRadius="10" Padding="10" Margin="3" BorderBrush="#1E2230" BorderThickness="1" Cursor="Hand">
+                            <Border x:Name="stemCard" CornerRadius="10" Padding="10" Margin="3" BorderThickness="1.5" Cursor="Hand"
+                                    Background="#12141A" BorderBrush="#1E2230" MouseLeftButtonDown="OnStemCardClick">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -75,9 +78,21 @@
                                         <TextBlock Text="{Binding DisplayName}" Foreground="White" FontWeight="SemiBold" FontSize="11" TextTrimming="CharacterEllipsis" />
                                         <TextBlock Text="{Binding Description}" Foreground="#4B5563" FontSize="9" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
                                     </StackPanel>
-                                    <CheckBox Grid.Column="1" IsChecked="{Binding IsSelected}" IsEnabled="{Binding IsAvailable}" VerticalAlignment="Center" Style="{StaticResource DarkCheckBoxStyle}" />
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding IsSelected}" IsEnabled="{Binding IsAvailable}" VerticalAlignment="Center" 
+                                              Style="{StaticResource DarkCheckBoxStyle}" IsHitTestVisible="False" />
                                 </Grid>
                             </Border>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                    <Setter TargetName="stemCard" Property="BorderBrush" Value="#00F0FF" />
+                                    <Setter TargetName="stemCard" Property="Background" Value="#0D1A1F" />
+                                    <Setter TargetName="stemCard" Property="Effect">
+                                        <Setter.Value>
+                                            <DropShadowEffect Color="#00F0FF" BlurRadius="10" ShadowDepth="0" Opacity="0.3" />
+                                        </Setter.Value>
+                                    </Setter>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -88,7 +103,7 @@
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- Section 03 · CARPETA DE TRABAJO -->
                 <!-- ═══════════════════════════════════════════ -->
-                <TextBlock Text="03 · CARPETA DE TRABAJO" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,10"  />
+                <TextBlock Text="03 · CARPETA DE TRABAJO" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,10" />
 
                 <Border Background="#12141A" CornerRadius="10" Padding="12" Margin="0,0,0,20" BorderBrush="#1E2230" BorderThickness="1">
                     <Grid>
@@ -109,7 +124,7 @@
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- Section 04 · ACELERACIÓN HARDWARE -->
                 <!-- ═══════════════════════════════════════════ -->
-                <TextBlock Text="04 · ACELERACIÓN" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,8"  />
+                <TextBlock Text="04 · ACELERACIÓN" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,8" />
                 <ComboBox ItemsSource="{Binding AvailableDevices}" SelectedItem="{Binding SelectedDevice}" Style="{StaticResource DarkComboBoxStyle}" Margin="0,0,0,20" />
 
                 <!-- ═══════════════════════════════════════════ -->

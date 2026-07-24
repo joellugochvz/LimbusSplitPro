@@ -1,7 +1,9 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Microsoft.Win32;
 using LimbusSplitPro.App.ViewModels;
+using LimbusSplitPro.Core.Models;
 
 namespace LimbusSplitPro.App.Views;
 
@@ -62,5 +64,30 @@ public partial class ControlPanel : UserControl
             e.Effects = DragDropEffects.None;
         }
         e.Handled = true;
+    }
+
+    /// <summary>Click on a stem card toggles its IsSelected state</summary>
+    private void OnStemCardClick(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.DataContext is StemCategory stem && stem.IsAvailable)
+        {
+            stem.IsSelected = !stem.IsSelected;
+        }
+    }
+
+    private void OnSelectAllClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            vm.StemSelection.SelectAllCommand.Execute(null);
+        }
+    }
+
+    private void OnSelectNoneClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            vm.StemSelection.SelectNoneCommand.Execute(null);
+        }
     }
 }
