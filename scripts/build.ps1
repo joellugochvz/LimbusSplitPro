@@ -14,7 +14,7 @@ Write-Host "========================================================" -Foregroun
 # 1. Restore & Compile Solution
 Write-Host "`n[1/5] Compilando solución .NET 8..." -ForegroundColor Yellow
 dotnet restore LimbusSplitPro.sln
-dotnet build LimbusSplitPro.sln -c $Configuration -r win-x64 --no-restore
+dotnet build LimbusSplitPro.sln -c $Configuration --no-restore
 
 # 2. Run Unit Tests
 Write-Host "`n[2/5] Ejecutando pruebas unitarias..." -ForegroundColor Yellow

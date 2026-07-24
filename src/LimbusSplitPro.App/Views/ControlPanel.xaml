@@ -7,9 +7,9 @@
              d:DesignHeight="700" d:DesignWidth="360">
     <Border Background="{StaticResource CardBackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="16">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="16">
+            <StackPanel>
                 <!-- App Header Logo & Title -->
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                     <Border Width="36" Height="36" Background="{StaticResource PrimaryAccentBrush}" CornerRadius="8" Margin="0,0,12,0">
                         <TextBlock Text="⚡" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" />
                     </Border>
@@ -20,7 +20,7 @@
                 </StackPanel>
 
                 <!-- Section 1: Audio Input Selector -->
-                <Border Background="#20242D" CornerRadius="8" Padding="12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                <Border Background="#20242D" CornerRadius="8" Padding="12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>
                         <TextBlock Text="1. Archivo de Entrada" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,8" />
                         <Button Content="🎵 Seleccionar / Arrastrar Canción" Style="{StaticResource FluentSecondaryButtonStyle}" Click="OnSelectInputFileClick" HorizontalAlignment="Stretch" Margin="0,0,0,8" />
@@ -29,7 +29,7 @@
                 </Border>
 
                 <!-- Section 2: Stem Category Selection -->
-                <Border Background="#20242D" CornerRadius="8" Padding="12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                <Border Background="#20242D" CornerRadius="8" Padding="12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>
                         <Grid Margin="0,0,0,8">
                             <TextBlock Text="2. Pistas a Extraer" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" />
@@ -57,7 +57,7 @@
                 </Border>
 
                 <!-- Section 3: Output Folder Picker -->
-                <Border Background="#20242D" CornerRadius="8" Padding="12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                <Border Background="#20242D" CornerRadius="8" Padding="12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>
                         <TextBlock Text="3. Carpeta de Exportación" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,8" />
                         <Button Content="📁 Elegir Carpeta..." Style="{StaticResource FluentSecondaryButtonStyle}" Click="OnSelectFolderClick" HorizontalAlignment="Stretch" Margin="0,0,0,8" />
@@ -66,7 +66,7 @@
                 </Border>
 
                 <!-- Section 4: Device Selector -->
-                <Border Background="#20242D" CornerRadius="8" Padding="12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                <Border Background="#20242D" CornerRadius="8" Padding="12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>
                         <TextBlock Text="4. Aceleración Hardware" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,8" />
                         <ComboBox ItemsSource="{Binding AvailableDevices}" SelectedItem="{Binding SelectedDevice}" Background="#181B22" Foreground="White" Height="30" />
