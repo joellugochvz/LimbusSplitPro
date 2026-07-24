@@ -12,7 +12,7 @@
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- Section 01 · MEZCLA -->
                 <!-- ═══════════════════════════════════════════ -->
-                <TextBlock Text="01 · MEZCLA" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,10" CharacterSpacing="80" />
+                <TextBlock Text="01 · MEZCLA" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,10"  />
 
                 <!-- Drop Zone -->
                 <Border Background="#12141A" CornerRadius="12" BorderBrush="#1E2230" BorderThickness="1" Padding="20" Margin="0,0,0,8"
@@ -49,7 +49,7 @@
                 <!-- Section 02 · QUÉ EXTRAER -->
                 <!-- ═══════════════════════════════════════════ -->
                 <Grid Margin="0,0,0,10">
-                    <TextBlock Text="02 · QUÉ EXTRAER" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" VerticalAlignment="Center" CharacterSpacing="80" />
+                    <TextBlock Text="02 · QUÉ EXTRAER" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" VerticalAlignment="Center"  />
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="Todas" Style="{StaticResource FluentSecondaryButtonStyle}" Command="{Binding StemSelection.SelectAllCommand}" Padding="8,4" FontSize="10" Margin="0,0,4,0" />
                         <Button Content="Ninguna" Style="{StaticResource FluentSecondaryButtonStyle}" Command="{Binding StemSelection.SelectNoneCommand}" Padding="8,4" FontSize="10" />
@@ -88,7 +88,7 @@
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- Section 03 · CARPETA DE TRABAJO -->
                 <!-- ═══════════════════════════════════════════ -->
-                <TextBlock Text="03 · CARPETA DE TRABAJO" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,10" CharacterSpacing="80" />
+                <TextBlock Text="03 · CARPETA DE TRABAJO" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,10"  />
 
                 <Border Background="#12141A" CornerRadius="10" Padding="12" Margin="0,0,0,20" BorderBrush="#1E2230" BorderThickness="1">
                     <Grid>
@@ -109,7 +109,7 @@
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- Section 04 · ACELERACIÓN HARDWARE -->
                 <!-- ═══════════════════════════════════════════ -->
-                <TextBlock Text="04 · ACELERACIÓN" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,8" CharacterSpacing="80" />
+                <TextBlock Text="04 · ACELERACIÓN" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,8"  />
                 <ComboBox ItemsSource="{Binding AvailableDevices}" SelectedItem="{Binding SelectedDevice}" Style="{StaticResource DarkComboBoxStyle}" Margin="0,0,0,20" />
 
                 <!-- ═══════════════════════════════════════════ -->
