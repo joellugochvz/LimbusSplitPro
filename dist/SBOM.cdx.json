@@ -1,0 +1,97 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.4.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "serialNumber": "urn:uuid:38c5b88c-16a2-43d5-8a58-a0beb85c85b6",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-07-24T00:25:16.446829Z",
+    "tools": [
+      {
+        "vendor": "Limbus Audio Systems",
+        "name": "Limbus SBOM Generator",
+        "version": "1.0.0"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "name": "Limbus Split Pro",
+      "version": "1.0.0",
+      "description": "Native Windows Application for AI Audio Stem Separation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Proprietary"
+          }
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "framework",
+      "name": ".NET Runtime & WPF",
+      "version": "8.0.5",
+      "purl": "pkg:generic/dotnet-runtime@8.0.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "NAudio",
+      "version": "2.2.1",
+      "purl": "pkg:nuget/NAudio@2.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "CommunityToolkit.Mvvm",
+      "version": "8.3.2",
+      "purl": "pkg:nuget/CommunityToolkit.Mvvm@8.3.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "model",
+      "name": "OpenUnmix (UMX-HQ)",
+      "version": "1.0.0",
+      "description": "4-Stem Music Source Separation Model",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "type": "model",
+      "name": "BS-Roformer ONNX",
+      "version": "1.2.0",
+      "description": "High Quality Vocal Specialist Model",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    }
+  ]
+}

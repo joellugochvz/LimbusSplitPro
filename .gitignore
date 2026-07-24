@@ -1,0 +1,24 @@
+# .NET & Visual Studio build outputs
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Python build outputs & caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Audio test outputs
+test_mix.wav
+test_output/
+test_unit_mix.wav
+test_unit_out/
+
+# OS specific files
+.DS_Store
+Thumbs.db

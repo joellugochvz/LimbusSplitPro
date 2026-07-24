@@ -1,0 +1,55 @@
+========================================================================
+Limbus Split Pro - Third Party Software Notices & Licenses
+========================================================================
+
+This application incorporates open-source software and machine learning models under various licenses.
+The following notices describe the terms and conditions under which these components are included.
+
+1. .NET 8.0 Runtime & WPF Libraries
+------------------------------------------------------------------------
+Copyright (c) .NET Foundation and Contributors
+Licensed under the MIT License.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+2. NAudio (Audio Library for .NET)
+------------------------------------------------------------------------
+Copyright (c) Mark Heath
+Licensed under the MIT License.
+
+3. CommunityToolkit.Mvvm
+------------------------------------------------------------------------
+Copyright (c) .NET Foundation and Contributors
+Licensed under the MIT License.
+
+4. OpenUnmix (UMX) Neural Network Models
+------------------------------------------------------------------------
+Copyright (c) Fabian-Robert Stöter, Antoine Liutkus et al. (Inria & Sony)
+Code: MIT License
+Model Weights: BSD 3-Clause License
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+- Redistributions of source code must retain the above copyright notice.
+- Redistributions in binary form must reproduce the above copyright notice.
+- Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+5. BS-Roformer ONNX Models
+------------------------------------------------------------------------
+Copyright (c) Roman Solovyev (ZFTurbo) et al.
+Licensed under the MIT License.
+
+6. FFmpeg & libsndfile (Audio Codecs)
+------------------------------------------------------------------------
+Licensed under the GNU Lesser General Public License (LGPL) v2.1 or later.
+Dynamic linking is strictly preserved. See LGPL_COMPLIANCE.md for details
+and instructions on replacing LGPL dynamic libraries.
+========================================================================

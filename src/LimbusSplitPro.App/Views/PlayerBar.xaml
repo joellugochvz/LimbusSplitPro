@@ -1,0 +1,58 @@
+<UserControl x:Class="LimbusSplitPro.App.Views.PlayerBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="90" d:DesignWidth="800">
+    <Border Background="#161920" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="16,12">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Top Row: Timeline Seek Slider -->
+            <Grid Grid.Row="0" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Slider Grid.Column="0" Minimum="0" Maximum="{Binding TotalDuration.TotalSeconds, FallbackValue=100}" Value="{Binding SeekSliderValue, Mode=TwoWay}" ValueChanged="OnSeekValueChanged" VerticalAlignment="Center" Margin="0,0,14,0" />
+                <TextBlock Grid.Column="1" Text="{Binding FormattedTimeText}" Foreground="{StaticResource TextSecondaryBrush}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
+            </Grid>
+
+            <!-- Bottom Row: Transport Controls & Export Action -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Transport Controls -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Command="{Binding PlayPauseCommand}" Style="{StaticResource FluentPrimaryButtonStyle}" Width="40" Height="40" Padding="0" Margin="0,0,8,0">
+                        <TextBlock Text="{Binding IsPlaying, Converter={StaticResource PlayPauseIconConverter}, FallbackValue='▶'}" FontSize="16" />
+                    </Button>
+                    <Button Command="{Binding StopCommand}" Style="{StaticResource FluentSecondaryButtonStyle}" Width="40" Height="40" Padding="0">
+                        <TextBlock Text="⏹" FontSize="16" />
+                    </Button>
+                </StackPanel>
+
+                <!-- Status Progress & Messages -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="20,0">
+                    <TextBlock Text="{Binding CurrentStageText}" Foreground="White" FontSize="12" TextTrimming="CharacterEllipsis" />
+                    <ProgressBar Minimum="0.0" Maximum="100.0" Value="{Binding ProcessingProgress}" Height="4" Margin="0,4,0,0" Foreground="{StaticResource PrimaryAccentBrush}" Background="#252A34" BorderThickness="0" Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+
+                <!-- Export & Folder Action Buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="💾 Exportar Mezcla" Style="{StaticResource FluentSecondaryButtonStyle}" Command="{Binding ExportMixCommand}" Margin="0,0,8,0" />
+                    <Button Content="📁 Abrir Carpeta" Style="{StaticResource FluentSecondaryButtonStyle}" Command="{Binding OpenOutputFolderCommand}" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

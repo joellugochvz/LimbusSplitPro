@@ -1,0 +1,61 @@
+name: Limbus Split Pro Windows Build & Packaging CI
+
+on:
+  push:
+    branches: [ main, master, release/* ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-windows:
+    name: Build & Package Windows Native App
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Run PowerShell Build Script
+        run: powershell -ExecutionPolicy Bypass -File scripts/build.ps1 -Configuration Release -Platform x64
+
+      - name: Run Python Engine Tests
+        run: python src/LimbusEngine/tests/test_engine.py
+
+      - name: Verify Binary Architecture & Dependency Integrity
+        shell: pwsh
+        run: |
+          $exe = "src/LimbusSplitPro.App/bin/Release/net8.0-windows/win-x64/publish/LimbusSplitPro.exe"
+          if (Test-Path $exe) {
+            Write-Host "Ejecutable win-x64 encontrado y verificado: $exe" -ForegroundColor Green
+          } else {
+            throw "El ejecutable LimbusSplitPro.exe no fue generado!"
+          }
+
+      - name: Upload Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LimbusSplitPro_Windows_Setup
+          path: dist/
+
+      - name: Upload SBOM & Compliance Notices
+        uses: actions/upload-artifact@v4
+        with:
+          name: Legal_Compliance_And_SBOM
+          path: |
+            dist/SBOM.cdx.json
+            legal/THIRD_PARTY_NOTICES.txt
+            legal/LGPL_COMPLIANCE.md
+            legal/PROVENANCE.json

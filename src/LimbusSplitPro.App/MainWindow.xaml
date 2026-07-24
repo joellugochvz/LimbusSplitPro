@@ -1,0 +1,45 @@
+<Window x:Class="LimbusSplitPro.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="clr-namespace:LimbusSplitPro.App.Views"
+        xmlns:helpers="clr-namespace:LimbusSplitPro.App.Helpers"
+        mc:Ignorable="d"
+        Title="Limbus Split Pro - Separación Musical por IA Local"
+        Height="780" Width="1200"
+        MinHeight="600" MinWidth="900"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource WindowBackgroundBrush}">
+
+    <Window.Resources>
+        <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <helpers:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
+        <helpers:InverseBoolConverter x:Key="InverseBoolConverter" />
+        <helpers:PlayPauseIconConverter x:Key="PlayPauseIconConverter" />
+    </Window.Resources>
+
+    <Grid PreviewKeyDown="OnWindowPreviewKeyDown" AllowDrop="True" Drop="OnWindowDrop">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Main Body: Control Panel (Left) & Multitrack Mixer (Right) -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="350" MinWidth="300" MaxWidth="450" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Control Panel (Left) -->
+            <views:ControlPanel Grid.Column="0" DataContext="{Binding}" />
+
+            <!-- Multitrack Mixer Panel (Right) -->
+            <views:MixerPanel Grid.Column="1" DataContext="{Binding}" Margin="16,16,16,16" />
+        </Grid>
+
+        <!-- Global Player Bar (Bottom) -->
+        <views:PlayerBar Grid.Row="1" DataContext="{Binding}" />
+    </Grid>
+</Window>

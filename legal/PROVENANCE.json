@@ -1,0 +1,40 @@
+{
+  "ProductName": "Limbus Split Pro",
+  "Version": "1.0.0",
+  "BuildPlatform": "Windows x64",
+  "DotNetVersion": ".NET 8.0 LTS (net8.0-windows)",
+  "PythonRuntime": {
+    "Version": "3.11.9",
+    "Distribution": "Official Python Embeddable Package for Windows x64",
+    "SourceUrl": "https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip",
+    "Sha256": "4b684cb33e4c4bd0c9d7249b6b7a59275a5e3f1e94473489ff60e4093952d718",
+    "Config": {
+      "PYTHONHOME": ".\\LimbusEngine\\python",
+      "PYTHONNOUSERSITE": "1"
+    }
+  },
+  "Models": [
+    {
+      "Id": "openunmix_umxhq",
+      "Name": "OpenUnmix HQ (UMX)",
+      "Version": "1.0.0",
+      "Author": "Fabian-Robert Stöter et al. (Inria & Sony)",
+      "CodeLicense": "MIT",
+      "WeightsLicense": "BSD-3-Clause",
+      "IsCommercialAllowed": true,
+      "IsRedistributable": true,
+      "ExpectedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "Id": "bs_roformer_voc",
+      "Name": "BS-Roformer Vocal Specialist",
+      "Version": "1.2.0",
+      "Author": "ZFTurbo / Roman Solovyev",
+      "CodeLicense": "MIT",
+      "WeightsLicense": "MIT",
+      "IsCommercialAllowed": true,
+      "IsRedistributable": true,
+      "ExpectedSha256": "cb248077163f014d476b5cf0d057700af42d82998651c5f8d098e72f2552a46e"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+<UserControl x:Class="LimbusSplitPro.App.Views.MixerPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="500" d:DesignWidth="600">
+    <Grid Background="#121419">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding MixerTracks}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="#1C2029" CornerRadius="8" Margin="0,0,0,10" Padding="14" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="140" />
+                                    <ColumnDefinition Width="60" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Track Badge Icon -->
+                                <Border Grid.Column="0" Width="36" Height="36" Background="#252A35" CornerRadius="6" Margin="0,0,14,0">
+                                    <TextBlock Text="🎵" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+
+                                <!-- Track Info -->
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding DisplayName}" FontWeight="Bold" Foreground="White" FontSize="14" />
+                                    <TextBlock Text="{Binding TrackId}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" />
+                                </StackPanel>
+
+                                <!-- Mute and Solo Controls -->
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <ToggleButton Style="{StaticResource MuteButtonStyle}" IsChecked="{Binding IsMuted}" Margin="0,0,6,0" />
+                                    <ToggleButton Style="{StaticResource SoloButtonStyle}" IsChecked="{Binding IsSolo}" />
+                                </StackPanel>
+
+                                <!-- Volume Slider -->
+                                <Slider Grid.Column="3" Minimum="0.0" Maximum="1.5" Value="{Binding Volume}" VerticalAlignment="Center" Margin="0,0,12,0" />
+
+                                <!-- Peak Level Meter -->
+                                <ProgressBar Grid.Column="4" Minimum="0.0" Maximum="1.0" Value="{Binding PeakLeft}" Height="10" VerticalAlignment="Center" Foreground="{StaticResource PrimaryAccentBrush}" Background="#252A34" BorderThickness="0" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

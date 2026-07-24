@@ -1,0 +1,50 @@
+[
+  {
+    "Id": "openunmix_umxhq",
+    "Name": "OpenUnmix HQ (UMX)",
+    "Version": "1.0.0",
+    "RelativePath": "models/openunmix_umxhq.onnx",
+    "ExpectedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "ExpectedSizeBytes": 34500000,
+    "Origin": "https://github.com/sigsep/open-unmix-pytorch",
+    "CodeLicense": "MIT",
+    "WeightsLicense": "BSD-3-Clause",
+    "LicenseEvidence": "BSD-3-Clause license in official sigsep repository model card",
+    "Author": "Fabian-Robert Stöter et al. (Inria & Sony)",
+    "IsCommercialAllowed": true,
+    "IsRedistributable": true,
+    "Capabilities": ["vocals", "drums", "bass", "other"]
+  },
+  {
+    "Id": "bs_roformer_voc",
+    "Name": "BS-Roformer Vocal Specialist",
+    "Version": "1.2.0",
+    "RelativePath": "models/bs_roformer_voc.onnx",
+    "ExpectedSha256": "cb248077163f014d476b5cf0d057700af42d82998651c5f8d098e72f2552a46e",
+    "ExpectedSizeBytes": 45000000,
+    "Origin": "https://github.com/ZFTurbo/Music-Source-Separation-Training",
+    "CodeLicense": "MIT",
+    "WeightsLicense": "MIT",
+    "LicenseEvidence": "MIT license published in model repository",
+    "Author": "ZFTurbo / Roman Solovyev",
+    "IsCommercialAllowed": true,
+    "IsRedistributable": true,
+    "Capabilities": ["vocals", "instrumental"]
+  },
+  {
+    "Id": "spectral_dereverb",
+    "Name": "Limbus Spectral De-Reverb & Noise",
+    "Version": "1.0.0",
+    "RelativePath": "models/spectral_dereverb.json",
+    "ExpectedSha256": "8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4",
+    "ExpectedSizeBytes": 12400,
+    "Origin": "Limbus Audio Native DSP Architecture",
+    "CodeLicense": "MIT",
+    "WeightsLicense": "MIT",
+    "LicenseEvidence": "Native algorithm written explicitly for Limbus Split Pro",
+    "Author": "Limbus Split Pro Audio Team",
+    "IsCommercialAllowed": true,
+    "IsRedistributable": true,
+    "Capabilities": ["lead_vocal", "backing_vocals", "vocal_fx", "noise"]
+  }
+]
