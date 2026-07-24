@@ -25,33 +25,74 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Inno Setup
-        run: choco install innosetup -y
+      - name: Restore NuGet Packages
+        run: dotnet restore LimbusSplitPro.sln
 
-      - name: Run PowerShell Build Script
-        run: powershell -ExecutionPolicy Bypass -File scripts/build.ps1 -Configuration Release -Platform x64
+      - name: Build Core Library
+        run: dotnet build src\LimbusSplitPro.Core\LimbusSplitPro.Core.csproj -c Release --no-restore
+
+      - name: Build Tests
+        run: dotnet build src\LimbusSplitPro.Tests\LimbusSplitPro.Tests.csproj -c Release --no-restore
+
+      - name: Build WPF App
+        run: dotnet build src\LimbusSplitPro.App\LimbusSplitPro.App.csproj -c Release -r win-x64 --no-restore
+
+      - name: Run Unit Tests
+        run: dotnet test src\LimbusSplitPro.Tests\LimbusSplitPro.Tests.csproj -c Release --no-build
+
+      - name: Publish Self-Contained App
+        run: dotnet publish src\LimbusSplitPro.App\LimbusSplitPro.App.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=false -o publish_output
 
       - name: Run Python Engine Tests
         run: python src/LimbusEngine/tests/test_engine.py
 
-      - name: Verify Binary Architecture & Dependency Integrity
+      - name: Verify Published Executable
         shell: pwsh
         run: |
-          $exe = "src/LimbusSplitPro.App/bin/Release/net8.0-windows/win-x64/publish/LimbusSplitPro.exe"
-          if (Test-Path $exe) {
-            Write-Host "Ejecutable win-x64 encontrado y verificado: $exe" -ForegroundColor Green
+          if (Test-Path "publish_output\LimbusSplitPro.exe") {
+            Write-Host "LimbusSplitPro.exe verificado correctamente" -ForegroundColor Green
+            Get-Item "publish_output\LimbusSplitPro.exe" | Select-Object Name, Length
           } else {
-            throw "El ejecutable LimbusSplitPro.exe no fue generado!"
+            Write-Host "Archivos en publish_output:" -ForegroundColor Yellow
+            Get-ChildItem publish_output -Recurse | Select-Object FullName
+            throw "LimbusSplitPro.exe no fue generado!"
           }
 
-      - name: Upload Installer Artifact
+      - name: Upload Portable App (Ready to Run)
         uses: actions/upload-artifact@v4
         with:
-          name: LimbusSplitPro_Windows_Setup
-          path: dist/
+          name: LimbusSplitPro_Portable_Win64
+          path: publish_output/
+          retention-days: 90
 
-      - name: Upload SBOM & Compliance Notices
+      - name: Generate SBOM
+        run: python scripts/generate_sbom.py
+
+      - name: Try Build Installer (Inno Setup)
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          choco install innosetup -y --no-progress
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (Test-Path $iscc) {
+            Write-Host "Inno Setup encontrado, generando instalador..." -ForegroundColor Green
+            & $iscc installer\setup.iss
+          } else {
+            Write-Host "Inno Setup no disponible, se omite el instalador." -ForegroundColor Yellow
+          }
+
+      - name: Upload Installer (if generated)
+        if: success()
         uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: LimbusSplitPro_Installer_Setup
+          path: dist/*.exe
+          retention-days: 90
+
+      - name: Upload SBOM & Legal
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: Legal_Compliance_And_SBOM
           path: |
