@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+using System.Collections.ObservableCollection;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -266,7 +266,7 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    private void OnAudioPlaybackStateChanged(object? sender, PlaybackState state)
+    private void OnAudioPlaybackStateChanged(object? sender, LimbusPlaybackState state)
     {
         IsPlaying = state.Status == PlaybackStatus.Playing;
         CurrentTime = state.CurrentTime;

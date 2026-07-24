@@ -8,8 +8,8 @@ public class TrackState
     public float Volume { get; set; } = 1.0f; // 0.0 to 1.0 (or up to 1.5)
     public bool IsMuted { get; set; }
     public bool IsSolo { get; set; }
-    public float PeakLevelLeft { get; set; }
-    public float PeakLevelRight { get; set; }
+    public float PeakLeft { get; set; }
+    public float PeakRight { get; set; }
     public string ColorHex { get; set; } = "#0078D4";
     public string IconKey { get; set; } = "AudioTrack";
 }
@@ -21,7 +21,7 @@ public enum PlaybackStatus
     Paused
 }
 
-public class PlaybackState
+public class LimbusPlaybackState
 {
     public PlaybackStatus Status { get; set; } = PlaybackStatus.Stopped;
     public TimeSpan CurrentTime { get; set; }

@@ -16,10 +16,10 @@ public class MultitrackAudioEngine : IAudioEngine
     private readonly List<TrackState> _trackStates = new();
     private readonly System.Timers.Timer _positionTimer;
 
-    public PlaybackState CurrentState { get; private set; } = new PlaybackState();
+    public LimbusPlaybackState CurrentState { get; private set; } = new LimbusPlaybackState();
     public IReadOnlyList<TrackState> ActiveTracks => _trackStates.AsReadOnly();
 
-    public event EventHandler<PlaybackState>? PlaybackStateChanged;
+    public event EventHandler<LimbusPlaybackState>? PlaybackStateChanged;
     public event EventHandler<TimeSpan>? PositionChanged;
     public event EventHandler<Dictionary<string, (float PeakL, float PeakR)>>? MetersUpdated;
 

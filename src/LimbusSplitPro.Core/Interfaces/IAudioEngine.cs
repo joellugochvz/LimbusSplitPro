@@ -4,10 +4,10 @@ namespace LimbusSplitPro.Core.Interfaces;
 
 public interface IAudioEngine : IDisposable
 {
-    PlaybackState CurrentState { get; }
+    LimbusPlaybackState CurrentState { get; }
     IReadOnlyList<TrackState> ActiveTracks { get; }
     
-    event EventHandler<PlaybackState>? PlaybackStateChanged;
+    event EventHandler<LimbusPlaybackState>? PlaybackStateChanged;
     event EventHandler<TimeSpan>? PositionChanged;
     event EventHandler<Dictionary<string, (float PeakL, float PeakR)>>? MetersUpdated;
 
