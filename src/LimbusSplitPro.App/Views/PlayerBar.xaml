@@ -18,7 +18,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Slider Grid.Column="0" Minimum="0" Maximum="{Binding TotalDuration.TotalSeconds, FallbackValue=100}" Value="{Binding SeekSliderValue, Mode=TwoWay}" ValueChanged="OnSeekValueChanged" VerticalAlignment="Center" Margin="0,0,14,0" />
+                <Slider Grid.Column="0" Minimum="0" Maximum="{Binding TotalDurationSeconds, FallbackValue=100}" Value="{Binding SeekSliderValue, Mode=TwoWay}" ValueChanged="OnSeekValueChanged" VerticalAlignment="Center" Margin="0,0,14,0" />
                 <TextBlock Grid.Column="1" Text="{Binding FormattedTimeText}" Foreground="{StaticResource TextSecondaryBrush}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
             </Grid>
 

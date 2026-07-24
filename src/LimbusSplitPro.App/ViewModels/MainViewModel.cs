@@ -55,6 +55,8 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private TimeSpan _totalDuration;
 
+    public double TotalDurationSeconds => TotalDuration.TotalSeconds > 0 ? TotalDuration.TotalSeconds : 100.0;
+
     [ObservableProperty]
     private double _seekSliderValue;
 
@@ -74,6 +76,11 @@ public partial class MainViewModel : ObservableObject
         OutputFolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), "Limbus Separations");
     }
 
+    partial void OnTotalDurationChanged(TimeSpan value)
+    {
+        OnPropertyChanged(nameof(TotalDurationSeconds));
+    }
+
     public void LoadInputFile(string filePath)
     {
         if (!File.Exists(filePath)) return;
@@ -86,7 +93,7 @@ public partial class MainViewModel : ObservableObject
             FilePath = filePath,
             FileName = fi.Name,
             FormatExtension = fi.Extension.TrimStart('.'),
-            Duration = TimeSpan.FromMinutes(3.5), // Example default duration
+            Duration = TimeSpan.FromMinutes(3.5),
             SampleRate = 44100,
             Channels = 2,
             FileSizeBytes = fi.Length

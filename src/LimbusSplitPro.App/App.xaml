@@ -1,6 +1,7 @@
 <Application x:Class="LimbusSplitPro.App.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="clr-namespace:LimbusSplitPro.App.Helpers"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
@@ -8,6 +9,12 @@
                 <ResourceDictionary Source="Styles/FluentColors.xaml" />
                 <ResourceDictionary Source="Styles/Controls.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Global WPF Value Converters -->
+            <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+            <helpers:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
+            <helpers:InverseBoolConverter x:Key="InverseBoolConverter" />
+            <helpers:PlayPauseIconConverter x:Key="PlayPauseIconConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
