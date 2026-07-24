@@ -1,4 +1,5 @@
 using System.IO;
+using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using LimbusSplitPro.Core.Interfaces;
