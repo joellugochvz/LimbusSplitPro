@@ -161,6 +161,7 @@ public partial class MainViewModel : ObservableObject
             }
             else
             {
+                CurrentStageText = $"❌ {result.ErrorMessage}";
                 StatusMessage = $"Error durante la separación: {result.ErrorMessage}";
                 SeparationStateText = "Error en la separación.";
             }

@@ -18,6 +18,83 @@ public class PythonProcessController : ISeparationEngine
         return true;
     }
 
+    /// <summary>
+    /// Finds a working Python executable. Searches multiple locations:
+    /// 1. Bundled python inside app directory
+    /// 2. "python" on PATH
+    /// 3. "python3" on PATH
+    /// 4. Common Windows install locations
+    /// 5. Windows Store python (py launcher)
+    /// </summary>
+    private static string? FindPythonExecutable(string appDir)
+    {
+        // 1. Check bundled Python
+        string bundled = Path.Combine(appDir, "LimbusEngine", "python", "python.exe");
+        if (File.Exists(bundled)) return bundled;
+
+        // 2-3. Check PATH candidates
+        string[] pathCandidates = { "python", "python3", "py" };
+        foreach (var candidate in pathCandidates)
+        {
+            if (TryRunPython(candidate)) return candidate;
+        }
+
+        // 4. Common Windows install locations
+        string[] commonPaths = {
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python"),
+            @"C:\Python311",
+            @"C:\Python312",
+            @"C:\Python313",
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Python311"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Python312"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Python313"),
+        };
+
+        foreach (var basePath in commonPaths)
+        {
+            if (Directory.Exists(basePath))
+            {
+                // Search for python.exe recursively in immediate subdirectories
+                try
+                {
+                    var pythonExe = Directory.GetFiles(basePath, "python.exe", SearchOption.AllDirectories).FirstOrDefault();
+                    if (pythonExe != null && File.Exists(pythonExe))
+                    {
+                        return pythonExe;
+                    }
+                }
+                catch { /* ignore access errors */ }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Test if a python command is available by trying to run --version</summary>
+    private static bool TryRunPython(string command)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = command,
+                Arguments = "--version",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            if (proc == null) return false;
+            proc.WaitForExit(3000);
+            return proc.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public async Task<SeparationJob> ProcessAsync(SeparationJob job, CancellationToken cancellationToken = default)
     {
         job.Status = JobStatus.Preparing;
@@ -36,16 +113,17 @@ public class PythonProcessController : ISeparationEngine
         if (!File.Exists(engineScriptPath))
         {
             job.Status = JobStatus.Failed;
-            job.ErrorMessage = $"Motor de separación no encontrado. Buscado en: {Path.Combine(appDir, "LimbusEngine")}";
+            job.ErrorMessage = $"Motor de separación no encontrado. Buscado en: {Path.Combine(appDir, "LimbusEngine")}. Asegúrate de que los archivos Python estén junto al ejecutable.";
             return job;
         }
 
-        // Find Python executable - bundled first, then system
-        string pythonExecutable = Path.Combine(appDir, "LimbusEngine", "python", "python.exe");
-        if (!File.Exists(pythonExecutable))
+        // Find Python executable with intelligent search
+        string? pythonExecutable = FindPythonExecutable(appDir);
+        if (pythonExecutable == null)
         {
-            // Windows uses "python", Linux/Mac use "python3"
-            pythonExecutable = "python";
+            job.Status = JobStatus.Failed;
+            job.ErrorMessage = "Python no encontrado en el sistema. Instala Python 3.11+ desde python.org y asegúrate de marcar 'Add Python to PATH' durante la instalación.";
+            return job;
         }
 
         string stemsArg = string.Join(",", job.RequestedStems.Select(s => s.Id));
@@ -132,10 +210,12 @@ public class PythonProcessController : ISeparationEngine
             }
         };
 
+        string stderrBuffer = "";
         _currentProcess.ErrorDataReceived += (sender, args) =>
         {
             if (!string.IsNullOrWhiteSpace(args.Data))
             {
+                stderrBuffer += args.Data + Environment.NewLine;
                 try
                 {
                     string logDir = WindowsPathHelper.GetLogsDirectory();
@@ -159,7 +239,16 @@ public class PythonProcessController : ISeparationEngine
                 try { exitCode = _currentProcess.ExitCode; } catch { }
 
                 job.Status = JobStatus.Failed;
-                job.ErrorMessage = $"El proceso Python terminó inesperadamente (código: {exitCode}). Revisa que Python 3.11+ esté instalado.";
+
+                if (exitCode == 9009)
+                {
+                    job.ErrorMessage = $"Python no fue encontrado (código 9009). Instala Python 3.11+ desde python.org y marca 'Add Python to PATH'.";
+                }
+                else
+                {
+                    string errorDetail = stderrBuffer.Length > 200 ? stderrBuffer[..200] : stderrBuffer;
+                    job.ErrorMessage = $"El proceso Python terminó con código {exitCode}. {(string.IsNullOrEmpty(errorDetail) ? "Sin detalles adicionales." : errorDetail.Trim())}";
+                }
                 tcs.TrySetResult(false);
             }
         };
@@ -169,10 +258,17 @@ public class PythonProcessController : ISeparationEngine
         {
             _currentProcess.Start();
         }
+        catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 2)
+        {
+            // ERROR_FILE_NOT_FOUND = 2
+            job.Status = JobStatus.Failed;
+            job.ErrorMessage = $"No se encontró el ejecutable Python en: '{pythonExecutable}'. Instala Python 3.11+ desde python.org y marca 'Add Python to PATH'.";
+            return job;
+        }
         catch (Exception ex)
         {
             job.Status = JobStatus.Failed;
-            job.ErrorMessage = $"No se pudo iniciar Python: {ex.Message}. Verifica que Python 3.11+ esté instalado y en el PATH del sistema.";
+            job.ErrorMessage = $"No se pudo iniciar Python: {ex.Message}. Verifica que Python 3.11+ esté instalado.";
             return job;
         }
 
