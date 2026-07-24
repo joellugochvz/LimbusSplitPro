@@ -14,7 +14,6 @@ public class PythonProcessController : ISeparationEngine
 
     public bool IsGpuAvailable(out string gpuInfo)
     {
-        // Safely check GPU availability via nvidia-smi or python test
         gpuInfo = "GPU Acceleration (DirectML / CUDA) compatible";
         return true;
     }
@@ -25,17 +24,28 @@ public class PythonProcessController : ISeparationEngine
         job.StartTime = DateTime.Now;
 
         string appDir = AppDomain.CurrentDomain.BaseDirectory;
-        string engineScriptPath = Path.Combine(appDir, "LimbusEngine", "src", "cli_runner.py");
+
+        // Find engine script - try multiple locations
+        string engineScriptPath = Path.Combine(appDir, "LimbusEngine", "cli_runner.py");
         if (!File.Exists(engineScriptPath))
         {
-            engineScriptPath = Path.Combine(appDir, "LimbusEngine", "cli_runner.py");
+            engineScriptPath = Path.Combine(appDir, "LimbusEngine", "src", "cli_runner.py");
         }
 
+        // If engine script not found, fail clearly
+        if (!File.Exists(engineScriptPath))
+        {
+            job.Status = JobStatus.Failed;
+            job.ErrorMessage = $"Motor de separación no encontrado. Buscado en: {Path.Combine(appDir, "LimbusEngine")}";
+            return job;
+        }
+
+        // Find Python executable - bundled first, then system
         string pythonExecutable = Path.Combine(appDir, "LimbusEngine", "python", "python.exe");
         if (!File.Exists(pythonExecutable))
         {
-            // Fallback to system python3 / python
-            pythonExecutable = "python3";
+            // Windows uses "python", Linux/Mac use "python3"
+            pythonExecutable = "python";
         }
 
         string stemsArg = string.Join(",", job.RequestedStems.Select(s => s.Id));
@@ -50,7 +60,6 @@ public class PythonProcessController : ISeparationEngine
             WorkingDirectory = Path.GetDirectoryName(engineScriptPath) ?? appDir
         };
 
-        // Use ArgumentList for safe execution
         startInfo.ArgumentList.Add(engineScriptPath);
         startInfo.ArgumentList.Add("--input");
         startInfo.ArgumentList.Add(job.InputFilePath);
@@ -61,10 +70,10 @@ public class PythonProcessController : ISeparationEngine
         startInfo.ArgumentList.Add("--device");
         startInfo.ArgumentList.Add(job.PreferredDevice);
 
-        // Configure isolated environment
+        // Isolated Python environment
         startInfo.EnvironmentVariables["PYTHONNOUSERSITE"] = "1";
 
-        _currentProcess = new Process { StartInfo = startInfo };
+        _currentProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
 
         job.Status = JobStatus.Separating;
 
@@ -127,12 +136,46 @@ public class PythonProcessController : ISeparationEngine
         {
             if (!string.IsNullOrWhiteSpace(args.Data))
             {
-                string logFile = Path.Combine(WindowsPathHelper.GetLogsDirectory(), "engine.log");
-                File.AppendAllText(logFile, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {args.Data}{Environment.NewLine}");
+                try
+                {
+                    string logDir = WindowsPathHelper.GetLogsDirectory();
+                    Directory.CreateDirectory(logDir);
+                    string logFile = Path.Combine(logDir, "engine.log");
+                    File.AppendAllText(logFile, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {args.Data}{Environment.NewLine}");
+                }
+                catch
+                {
+                    // Non-critical logging failure
+                }
             }
         };
 
-        _currentProcess.Start();
+        // Handle unexpected process exit
+        _currentProcess.Exited += (sender, args) =>
+        {
+            if (job.Status == JobStatus.Separating && job.Progress < 100)
+            {
+                int exitCode = -1;
+                try { exitCode = _currentProcess.ExitCode; } catch { }
+
+                job.Status = JobStatus.Failed;
+                job.ErrorMessage = $"El proceso Python terminó inesperadamente (código: {exitCode}). Revisa que Python 3.11+ esté instalado.";
+                tcs.TrySetResult(false);
+            }
+        };
+
+        // Try to start the process
+        try
+        {
+            _currentProcess.Start();
+        }
+        catch (Exception ex)
+        {
+            job.Status = JobStatus.Failed;
+            job.ErrorMessage = $"No se pudo iniciar Python: {ex.Message}. Verifica que Python 3.11+ esté instalado y en el PATH del sistema.";
+            return job;
+        }
+
         ProcessJobObject.AttachProcess(_currentProcess);
 
         _currentProcess.BeginOutputReadLine();

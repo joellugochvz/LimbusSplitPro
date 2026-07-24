@@ -5,33 +5,110 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:views="clr-namespace:LimbusSplitPro.App.Views"
         mc:Ignorable="d"
-        Title="Limbus Split Pro - Separación Musical por IA Local"
-        Height="780" Width="1200"
-        MinHeight="600" MinWidth="900"
+        Title="Limbus Split Pro" Height="780" Width="1200" MinHeight="600" MinWidth="900"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource WindowBackgroundBrush}">
+        WindowStyle="None"
+        Background="#0A0A0F"
+        PreviewKeyDown="OnWindowPreviewKeyDown"
+        AllowDrop="True"
+        Drop="OnWindowDrop">
+    
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="40" CornerRadius="12" GlassFrameThickness="0" ResizeBorderThickness="6" />
+    </WindowChrome.WindowChrome>
 
-    <Grid PreviewKeyDown="OnWindowPreviewKeyDown" AllowDrop="True" Drop="OnWindowDrop">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto"/> <!-- TitleBar -->
+            <RowDefinition Height="*"/>    <!-- Content -->
+            <RowDefinition Height="Auto"/> <!-- PlayerBar -->
         </Grid.RowDefinitions>
 
-        <!-- Main Body: Control Panel (Left) & Multitrack Mixer (Right) -->
-        <Grid Grid.Row="0">
+        <!-- Custom Title Bar -->
+        <Border Grid.Row="0" Background="#0D0D14" Height="40">
+            <DockPanel LastChildFill="True">
+                
+                <!-- Left: Logo and Title -->
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+                    <Border Width="28" Height="28" Background="#00E5FF" CornerRadius="6" Margin="0,0,12,0">
+                        <TextBlock Text="⚡" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock VerticalAlignment="Center" Foreground="White" FontSize="14">
+                        <Run Text="LIMBUS" FontWeight="Bold"/>
+                        <Run Text=" "/>
+                        <Run Text="SPLIT PRO" FontWeight="Light"/>
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- Right: Controls -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
+                    <!-- Badge -->
+                    <Border Background="#1A1A24" BorderBrush="#00E5FF" BorderThickness="1" CornerRadius="4" Padding="8,2" Margin="0,0,20,0" VerticalAlignment="Center" Height="24">
+                        <TextBlock Text="🔒 PROCESAMIENTO LOCAL" Foreground="#00E5FF" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Window Buttons -->
+                    <Button Click="OnMinimizeClick" Width="46" Background="Transparent" BorderThickness="0" Foreground="White" FontSize="14" Content="─">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#2D2D3B"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button Click="OnMaximizeClick" Width="46" Background="Transparent" BorderThickness="0" Foreground="White" FontSize="14" Content="□">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#2D2D3B"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button Click="OnCloseClick" Width="46" Background="Transparent" BorderThickness="0" Foreground="White" FontSize="14" Content="✕">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#E81123"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+                
+                <!-- Drag Area (Fill remaining space) -->
+                <Border Background="Transparent" MouseDown="OnTitleBarMouseDown" WindowChrome.IsHitTestVisibleInChrome="True" />
+            </DockPanel>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="350" MinWidth="300" MaxWidth="450" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- Control Panel (Left) -->
-            <views:ControlPanel Grid.Column="0" DataContext="{Binding}" />
-
-            <!-- Multitrack Mixer Panel (Right) -->
-            <views:MixerPanel Grid.Column="1" DataContext="{Binding}" Margin="16,16,16,16" />
+            <views:ControlPanel Grid.Column="0" Width="380" MinWidth="320" MaxWidth="460" Margin="0,0,0,0" />
+            <views:MixerPanel Grid.Column="1" Margin="24" />
         </Grid>
 
-        <!-- Global Player Bar (Bottom) -->
-        <views:PlayerBar Grid.Row="1" DataContext="{Binding}" />
+        <!-- Player Bar at the bottom -->
+        <views:PlayerBar Grid.Row="2" />
     </Grid>
 </Window>

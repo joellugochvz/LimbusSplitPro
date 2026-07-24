@@ -47,6 +47,9 @@ public partial class MainViewModel : ObservableObject
     private string _statusMessage = "Selecciona una canción y una carpeta de destino.";
 
     [ObservableProperty]
+    private string _separationStateText = "Elige una canción y configura las pistas a separar.";
+
+    [ObservableProperty]
     private bool _isPlaying;
 
     [ObservableProperty]
@@ -56,6 +59,8 @@ public partial class MainViewModel : ObservableObject
     private TimeSpan _totalDuration;
 
     public double TotalDurationSeconds => TotalDuration.TotalSeconds > 0 ? TotalDuration.TotalSeconds : 100.0;
+
+    public int GeneratedTrackCount => MixerTracks.Count;
 
     [ObservableProperty]
     private double _seekSliderValue;
@@ -100,6 +105,7 @@ public partial class MainViewModel : ObservableObject
         };
 
         StatusMessage = $"Canción cargada: {fi.Name}";
+        SeparationStateText = "Canción lista. Configura las pistas y presiona Split.";
     }
 
     [RelayCommand]
@@ -127,6 +133,13 @@ public partial class MainViewModel : ObservableObject
         IsProcessing = true;
         ProcessingProgress = 0.0;
         CurrentStageText = "Iniciando proceso de separación local...";
+        SeparationStateText = "Separando en este PC.";
+        StatusMessage = "Preparando el motor de IA...";
+
+        // Give UI time to update, then show wait message
+        await Task.Delay(500);
+        CurrentStageText = "⏳ Espera unos minutos en lo que termino de separar...";
+        StatusMessage = "El motor de IA está procesando tu canción. Esto puede tardar unos minutos.";
 
         var job = new SeparationJob
         {
@@ -143,16 +156,32 @@ public partial class MainViewModel : ObservableObject
             if (result.Status == JobStatus.Completed)
             {
                 StatusMessage = "¡Separación completada con éxito!";
+                SeparationStateText = "La exportación está preparada.";
                 LoadGeneratedTracksIntoMixer(result.GeneratedStemFiles);
             }
             else
             {
                 StatusMessage = $"Error durante la separación: {result.ErrorMessage}";
+                SeparationStateText = "Error en la separación.";
             }
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "Separación cancelada por el usuario.";
+            SeparationStateText = "Proceso cancelado.";
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Falló la separación: {ex.Message}";
+            if (ex.Message.Contains("python", StringComparison.OrdinalIgnoreCase) ||
+                ex.Message.Contains("Python", StringComparison.OrdinalIgnoreCase))
+            {
+                StatusMessage = "Python no encontrado. Asegúrate de tener Python 3.11+ instalado y en el PATH.";
+            }
+            else
+            {
+                StatusMessage = $"Falló la separación: {ex.Message}";
+            }
+            SeparationStateText = "Error en la separación.";
         }
         finally
         {
@@ -167,6 +196,7 @@ public partial class MainViewModel : ObservableObject
         IsProcessing = false;
         CurrentStageText = "Proceso cancelado por el usuario.";
         StatusMessage = "Separación cancelada.";
+        SeparationStateText = "Proceso cancelado.";
     }
 
     private void LoadGeneratedTracksIntoMixer(Dictionary<string, string> generatedFiles)
@@ -183,7 +213,7 @@ public partial class MainViewModel : ObservableObject
 
             string name = category?.DisplayName ?? stemId;
             string icon = category?.IconKey ?? "AudioTrack";
-            string color = category?.DefaultColorHex ?? "#0078D4";
+            string color = category?.DefaultColorHex ?? "#00F0FF";
 
             var trackVm = new TrackViewModel(stemId, name, filePath, icon, color);
             trackVm.VolumeChanged += (s, vol) => _audioEngine.SetTrackVolume(stemId, vol);
@@ -208,6 +238,8 @@ public partial class MainViewModel : ObservableObject
         _audioEngine.LoadTracks(trackStates);
         TotalDuration = _audioEngine.CurrentState.TotalDuration;
         UpdateFormattedTime();
+
+        OnPropertyChanged(nameof(GeneratedTrackCount));
     }
 
     [RelayCommand]

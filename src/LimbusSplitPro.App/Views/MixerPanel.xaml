@@ -4,49 +4,162 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="500" d:DesignWidth="600">
-    <Grid Background="#121419">
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{Binding MixerTracks}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border Background="#1C2029" CornerRadius="8" Margin="0,0,0,10" Padding="14" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="140" />
-                                    <ColumnDefinition Width="60" />
-                                </Grid.ColumnDefinitions>
+             d:DesignHeight="600" d:DesignWidth="650">
+    <Border Background="#0A0A0F" CornerRadius="12" Margin="4" Padding="20" BorderBrush="#1E2230" BorderThickness="1">
+        <Grid>
+            <!-- ═══════════════════════════════════════════ -->
+            <!-- STATE 1: Empty / Waiting -->
+            <!-- ═══════════════════════════════════════════ -->
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Visibility="{Binding IsProcessing, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding MixerTracks.Count}" Value="0">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+                <TextBlock Text="🎚" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,16" Opacity="0.3" />
+                <TextBlock Text="Elige qué quieres extraer" Foreground="White" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                <TextBlock Text="Todas las familias. Los WAV aparecerán aquí al terminar." Foreground="#6B7280" FontSize="12" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="300" />
+            </StackPanel>
 
-                                <!-- Track Badge Icon -->
-                                <Border Grid.Column="0" Width="36" Height="36" Background="#252A35" CornerRadius="6" Margin="0,0,14,0">
-                                    <TextBlock Text="🎵" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <!-- ═══════════════════════════════════════════ -->
+            <!-- STATE 2: Processing -->
+            <!-- ═══════════════════════════════════════════ -->
+            <StackPanel Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}"
+                        VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="400">
+                <TextBlock Text="RESULTADO" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,8" CharacterSpacing="80" />
+                <TextBlock Text="{Binding SeparationStateText}" Foreground="White" FontSize="22" FontWeight="Bold" Margin="0,0,0,16" TextWrapping="Wrap" />
+
+                <Border Background="#12141A" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="8" Height="8" Fill="#00F0FF" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding CurrentStageText}" Foreground="#A0A5B1" FontSize="12" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProcessingProgress}" Height="6" Margin="0,0,0,16"
+                             Foreground="#00F0FF" Background="#1E2230" BorderThickness="0">
+                    <ProgressBar.Clip>
+                        <RectangleGeometry RadiusX="3" RadiusY="3" Rect="0,0,400,6" />
+                    </ProgressBar.Clip>
+                </ProgressBar>
+
+                <TextBlock Text="⏳ Espera unos minutos en lo que termino de separar" Foreground="#6B7280" FontSize="12" HorizontalAlignment="Center" FontStyle="Italic" />
+            </StackPanel>
+
+            <!-- ═══════════════════════════════════════════ -->
+            <!-- STATE 3: Results -->
+            <!-- ═══════════════════════════════════════════ -->
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsProcessing}" Value="False" />
+                                </MultiDataTrigger.Conditions>
+                                <!-- We can't easily do Count > 0, so we hide when Count=0 via the empty state above -->
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Results Header -->
+                <Grid Grid.Row="0" Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="RESULTADO" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,4" CharacterSpacing="80" />
+                        <TextBlock Text="La exportación está preparada." Foreground="White" FontSize="20" FontWeight="Bold" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                        <Button Content="💾 Guardar" Style="{StaticResource FluentSecondaryButtonStyle}" Command="{Binding ExportMixCommand}" Padding="10,6" FontSize="11" Margin="0,0,6,0" />
+                        <Button Content="📁 Abrir carpeta" Style="{StaticResource FluentSecondaryButtonStyle}" Command="{Binding OpenOutputFolderCommand}" Padding="10,6" FontSize="11" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- Info + Transport -->
+                <Border Grid.Row="1" Background="#12141A" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Foreground="#A0A5B1" FontSize="11" Margin="0,0,0,8">
+                            <Run Text="•" Foreground="#00F0FF" />
+                            <Run Text=" " />
+                            <Run Text="{Binding MixerTracks.Count, Mode=OneWay, StringFormat='{}{0} archivos WAV listos.'}" />
+                        </TextBlock>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal">
+                            <Button Command="{Binding PlayPauseCommand}" Style="{StaticResource FluentSecondaryButtonStyle}" Padding="8,4" FontSize="11" Margin="0,0,6,0">
+                                <TextBlock Text="{Binding IsPlaying, Converter={StaticResource PlayPauseIconConverter}, FallbackValue='▶ Play todos'}" />
+                            </Button>
+                            <Button Content="⏹ Stop" Command="{Binding StopCommand}" Style="{StaticResource FluentSecondaryButtonStyle}" Padding="8,4" FontSize="11" Margin="0,0,16,0" />
+                            <TextBlock Text="{Binding FormattedTimeText}" Foreground="#6B7280" FontSize="11" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Track List -->
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Style="{StaticResource DarkScrollViewerStyle}">
+                    <ItemsControl ItemsSource="{Binding MixerTracks}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#12141A" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="#1E2230" BorderThickness="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="120" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Track Color Badge -->
+                                        <Border Grid.Column="0" Width="28" Height="28" CornerRadius="6" Margin="0,0,10,0">
+                                            <Border.Background>
+                                                <SolidColorBrush Color="#00F0FF" />
+                                            </Border.Background>
+                                            <TextBlock Text="🎵" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+
+                                        <!-- Track Info -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding DisplayName}" Foreground="White" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Foreground="#6B7280" FontSize="10">
+                                                <Run Text="WAV · 100%" />
+                                            </TextBlock>
+                                        </StackPanel>
+
+                                        <!-- Mute / Solo -->
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <ToggleButton Style="{StaticResource MuteButtonStyle}" IsChecked="{Binding IsMuted}" Margin="0,0,4,0" />
+                                            <ToggleButton Style="{StaticResource SoloButtonStyle}" IsChecked="{Binding IsSolo}" />
+                                        </StackPanel>
+
+                                        <!-- Volume Slider -->
+                                        <Slider Grid.Column="4" Minimum="0.0" Maximum="1.5" Value="{Binding Volume}" VerticalAlignment="Center" />
+                                    </Grid>
                                 </Border>
-
-                                <!-- Track Info -->
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding DisplayName}" FontWeight="Bold" Foreground="White" FontSize="14" />
-                                    <TextBlock Text="{Binding TrackId}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" />
-                                </StackPanel>
-
-                                <!-- Mute and Solo Controls -->
-                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
-                                    <ToggleButton Style="{StaticResource MuteButtonStyle}" IsChecked="{Binding IsMuted}" Margin="0,0,6,0" />
-                                    <ToggleButton Style="{StaticResource SoloButtonStyle}" IsChecked="{Binding IsSolo}" />
-                                </StackPanel>
-
-                                <!-- Volume Slider -->
-                                <Slider Grid.Column="3" Minimum="0.0" Maximum="1.5" Value="{Binding Volume}" VerticalAlignment="Center" Margin="0,0,12,0" />
-
-                                <!-- Peak Level Meter -->
-                                <ProgressBar Grid.Column="4" Minimum="0.0" Maximum="1.0" Value="{Binding PeakLeft}" Height="10" VerticalAlignment="Center" Foreground="{StaticResource PrimaryAccentBrush}" Background="#252A34" BorderThickness="0" />
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
-    </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
+    </Border>
 </UserControl>

@@ -18,7 +18,6 @@ public partial class MainWindow : Window
 
     private void OnWindowPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        // Spacebar shortcut toggles play/pause ONLY if focus is NOT inside TextBox or ComboBox
         if (e.Key == Key.Space)
         {
             var focusedElem = Keyboard.FocusedElement;
@@ -40,5 +39,28 @@ public partial class MainWindow : Window
                 ViewModel.LoadInputFile(files[0]);
             }
         }
+    }
+
+    private void OnTitleBarMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton == MouseButton.Left)
+        {
+            DragMove();
+        }
+    }
+
+    private void OnMinimizeClick(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void OnMaximizeClick(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    }
+
+    private void OnCloseClick(object sender, RoutedEventArgs e)
+    {
+        Close();
     }
 }

@@ -4,77 +4,150 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="700" d:DesignWidth="360">
-    <Border Background="{StaticResource CardBackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="16">
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+             d:DesignHeight="700" d:DesignWidth="380">
+    <Border Background="#0E1017" Padding="20">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Style="{StaticResource DarkScrollViewerStyle}">
             <StackPanel>
-                <!-- App Header Logo & Title -->
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Border Width="36" Height="36" Background="{StaticResource PrimaryAccentBrush}" CornerRadius="8" Margin="0,0,12,0">
-                        <TextBlock Text="⚡" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" />
-                    </Border>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Limbus Split Pro" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" />
-                        <TextBlock Text="Motor Local de Separación IA" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
-                    </StackPanel>
-                </StackPanel>
 
-                <!-- Section 1: Audio Input Selector -->
-                <Border Background="#20242D" CornerRadius="8" Padding="12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Margin="0,0,0,16">
-                    <StackPanel>
-                        <TextBlock Text="1. Archivo de Entrada" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,8" />
-                        <Button Content="🎵 Seleccionar / Arrastrar Canción" Style="{StaticResource FluentSecondaryButtonStyle}" Click="OnSelectInputFileClick" HorizontalAlignment="Stretch" Margin="0,0,0,8" />
-                        <TextBlock Text="{Binding SelectedInputFilePath, TargetNullValue='Ningún archivo seleccionado'}" TextTrimming="CharacterEllipsis" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
+                <!-- ═══════════════════════════════════════════ -->
+                <!-- Section 01 · MEZCLA -->
+                <!-- ═══════════════════════════════════════════ -->
+                <TextBlock Text="01 · MEZCLA" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,10" CharacterSpacing="80" />
+
+                <!-- Drop Zone -->
+                <Border Background="#12141A" CornerRadius="12" BorderBrush="#1E2230" BorderThickness="1" Padding="20" Margin="0,0,0,8"
+                        AllowDrop="True" Drop="OnDropZoneDrop" DragOver="OnDropZoneDragOver">
+                    <StackPanel HorizontalAlignment="Center" Visibility="{Binding SelectedInputFilePath, Converter={StaticResource InverseBoolToVisibilityConverter}, ConverterParameter=string}">
+                        <TextBlock Text="🎵" FontSize="28" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                        <TextBlock Text="Suelta aquí tu mezcla" Foreground="White" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,4" />
+                        <TextBlock Text="WAV, MP3 o FLAC" Foreground="#6B7280" FontSize="11" HorizontalAlignment="Center" Margin="0,0,0,12" />
+                        <Button Content="Elegir archivo" Style="{StaticResource FluentSecondaryButtonStyle}" Click="OnSelectInputFileClick" HorizontalAlignment="Center" Padding="16,8" />
                     </StackPanel>
                 </Border>
 
-                <!-- Section 2: Stem Category Selection -->
-                <Border Background="#20242D" CornerRadius="8" Padding="12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Margin="0,0,0,16">
-                    <StackPanel>
-                        <Grid Margin="0,0,0,8">
-                            <TextBlock Text="2. Pistas a Extraer" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" />
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="Todas" Style="{StaticResource FluentSecondaryButtonStyle}" Command="{Binding StemSelection.SelectAllCommand}" Padding="6,2" FontSize="11" Margin="0,0,4,0" />
-                                <Button Content="Ninguna" Style="{StaticResource FluentSecondaryButtonStyle}" Command="{Binding StemSelection.SelectNoneCommand}" Padding="6,2" FontSize="11" />
-                            </StackPanel>
-                        </Grid>
-
-                        <ItemsControl ItemsSource="{Binding StemSelection.Categories}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <CheckBox IsChecked="{Binding IsSelected}" IsEnabled="{Binding IsAvailable}" Margin="0,3">
-                                        <CheckBox.Content>
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding DisplayName}" Foreground="White" FontSize="12" />
-                                                <TextBlock Text=" [No Disp.]" Foreground="#E74C3C" FontSize="10" Visibility="{Binding IsAvailable, Converter={StaticResource InverseBoolToVisibilityConverter}, FallbackValue=Collapsed}" />
-                                            </StackPanel>
-                                        </CheckBox.Content>
-                                    </CheckBox>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
+                <!-- Loaded file info -->
+                <Border Background="#12141A" CornerRadius="10" Padding="12" Margin="0,0,0,20"
+                        Visibility="{Binding InputFileInfo, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Width="32" Height="32" CornerRadius="8" Background="#1A1D26" Margin="0,0,10,0">
+                            <TextBlock Text="🎵" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding InputFileInfo.FileName}" Foreground="White" FontWeight="SemiBold" FontSize="12" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding InputFileInfo.FormattedFormat}" Foreground="#6B7280" FontSize="10" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" Text="✓" Foreground="#00F0FF" FontSize="16" VerticalAlignment="Center" />
+                    </Grid>
                 </Border>
 
-                <!-- Section 3: Output Folder Picker -->
-                <Border Background="#20242D" CornerRadius="8" Padding="12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Margin="0,0,0,16">
-                    <StackPanel>
-                        <TextBlock Text="3. Carpeta de Exportación" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,8" />
-                        <Button Content="📁 Elegir Carpeta..." Style="{StaticResource FluentSecondaryButtonStyle}" Click="OnSelectFolderClick" HorizontalAlignment="Stretch" Margin="0,0,0,8" />
-                        <TextBlock Text="{Binding OutputFolderPath}" TextTrimming="CharacterEllipsis" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
+                <!-- ═══════════════════════════════════════════ -->
+                <!-- Section 02 · QUÉ EXTRAER -->
+                <!-- ═══════════════════════════════════════════ -->
+                <Grid Margin="0,0,0,10">
+                    <TextBlock Text="02 · QUÉ EXTRAER" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" VerticalAlignment="Center" CharacterSpacing="80" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Todas" Style="{StaticResource FluentSecondaryButtonStyle}" Command="{Binding StemSelection.SelectAllCommand}" Padding="8,4" FontSize="10" Margin="0,0,4,0" />
+                        <Button Content="Ninguna" Style="{StaticResource FluentSecondaryButtonStyle}" Command="{Binding StemSelection.SelectNoneCommand}" Padding="8,4" FontSize="10" />
                     </StackPanel>
+                </Grid>
+
+                <!-- Stems Grid (2 columns) -->
+                <ItemsControl ItemsSource="{Binding StemSelection.Categories}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="2" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="#12141A" CornerRadius="10" Padding="10" Margin="3" BorderBrush="#1E2230" BorderThickness="1" Cursor="Hand">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding DisplayName}" Foreground="White" FontWeight="SemiBold" FontSize="11" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding Description}" Foreground="#4B5563" FontSize="9" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding IsSelected}" IsEnabled="{Binding IsAvailable}" VerticalAlignment="Center" Style="{StaticResource DarkCheckBoxStyle}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="Other reúne lo no seleccionado. Voces es la base: al elegir Voz principal, Coros o Efectos vocales se activa y exporta automáticamente."
+                           Foreground="#4B5563" FontSize="10" TextWrapping="Wrap" Margin="4,8,4,20" />
+
+                <!-- ═══════════════════════════════════════════ -->
+                <!-- Section 03 · CARPETA DE TRABAJO -->
+                <!-- ═══════════════════════════════════════════ -->
+                <TextBlock Text="03 · CARPETA DE TRABAJO" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,10" CharacterSpacing="80" />
+
+                <Border Background="#12141A" CornerRadius="10" Padding="12" Margin="0,0,0,20" BorderBrush="#1E2230" BorderThickness="1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="📁" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="Pistas separar" Foreground="White" FontSize="12" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding OutputFolderPath}" Foreground="#6B7280" FontSize="10" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <Button Grid.Column="2" Content="Cambiar" Style="{StaticResource FluentSecondaryButtonStyle}" Click="OnSelectFolderClick" Padding="10,6" FontSize="11" VerticalAlignment="Center" />
+                    </Grid>
                 </Border>
 
-                <!-- Section 4: Device Selector -->
-                <Border Background="#20242D" CornerRadius="8" Padding="12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Margin="0,0,0,16">
-                    <StackPanel>
-                        <TextBlock Text="4. Aceleración Hardware" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,8" />
-                        <ComboBox ItemsSource="{Binding AvailableDevices}" SelectedItem="{Binding SelectedDevice}" Background="#181B22" Foreground="White" Height="30" />
-                    </StackPanel>
-                </Border>
+                <!-- ═══════════════════════════════════════════ -->
+                <!-- Section 04 · ACELERACIÓN HARDWARE -->
+                <!-- ═══════════════════════════════════════════ -->
+                <TextBlock Text="04 · ACELERACIÓN" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,8" CharacterSpacing="80" />
+                <ComboBox ItemsSource="{Binding AvailableDevices}" SelectedItem="{Binding SelectedDevice}" Style="{StaticResource DarkComboBoxStyle}" Margin="0,0,0,20" />
 
-                <!-- CTA Button: Separar y Exportar -->
-                <Button Content="🚀 Separar y Exportar" Style="{StaticResource FluentPrimaryButtonStyle}" Command="{Binding StartSeparationCommand}" IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}" Height="44" FontSize="15" />
+                <!-- ═══════════════════════════════════════════ -->
+                <!-- CTA BUTTON: SPLIT -->
+                <!-- ═══════════════════════════════════════════ -->
+                <Button Command="{Binding StartSeparationCommand}" IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}" Height="48" Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="splitBorder" CornerRadius="12" Padding="16,12">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#00F0FF" Offset="0" />
+                                        <GradientStop Color="#A855F7" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <TextBlock Text="✦  Split" FontSize="16" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="splitBorder" Property="Effect">
+                                        <Setter.Value>
+                                            <DropShadowEffect Color="#00F0FF" BlurRadius="20" ShadowDepth="0" Opacity="0.5" />
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="splitBorder" Property="Opacity" Value="0.4" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <!-- Cancel link (visible during processing) -->
+                <Button Content="Cancelar proceso" Command="{Binding CancelSeparationCommand}" HorizontalAlignment="Center" Margin="0,10,0,0"
+                        Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}"
+                        Foreground="#EF4444" Background="Transparent" BorderThickness="0" FontSize="12" Cursor="Hand" />
+
             </StackPanel>
         </ScrollViewer>
     </Border>
