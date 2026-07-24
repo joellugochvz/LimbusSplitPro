@@ -21,7 +21,7 @@ OutputBaseFilename=LimbusSplitPro_v1.0.0_Setup
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
-PrivilegesRequiredOverridesAllowed=dialog command
+PrivilegesRequiredOverridesAllowed=dialog commandline
 UninstallDisplayIcon={app}\{#MyAppExeName}
 
 [Languages]
