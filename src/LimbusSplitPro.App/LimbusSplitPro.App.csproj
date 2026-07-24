@@ -8,10 +8,8 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>LimbusSplitPro.App</RootNamespace>
     <AssemblyName>LimbusSplitPro</AssemblyName>
-    <ApplicationIcon>Assets\app_icon.ico</ApplicationIcon>
     <PublishSingleFile>false</PublishSingleFile>
     <SelfContained>true</SelfContained>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
