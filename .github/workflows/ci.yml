@@ -44,7 +44,8 @@ jobs:
         run: dotnet publish src\LimbusSplitPro.App\LimbusSplitPro.App.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=false -o publish_output
 
       - name: Run Python Engine Tests
-        run: python src/LimbusEngine/tests/test_engine.py
+        working-directory: src/LimbusEngine
+        run: python tests/test_engine.py -v
 
       - name: Verify Published Executable
         shell: pwsh
