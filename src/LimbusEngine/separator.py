@@ -28,10 +28,17 @@ def _report(callback, percentage: float, stage: str, model: str = "Demucs", devi
 
 
 def _demucs_available() -> bool:
+    """
+    Returns True only when Demucs AND all its dependencies (numpy, torch, etc.)
+    are importable. A shallow 'import demucs' can succeed while deeper imports
+    (e.g. demucs.apply → numpy) still fail.
+    """
     try:
-        import demucs  # noqa
+        import numpy          # noqa – required by demucs internals
+        import torch          # noqa – required by demucs
+        import demucs.separate  # noqa – triggers the full import chain
         return True
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         return False
 
 
