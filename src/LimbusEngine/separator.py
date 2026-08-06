@@ -1,352 +1,345 @@
 """
-Limbus Split Pro — Separation Engine
-Uses Demucs (Meta Research) for real AI stem separation.
-Falls back to a spectral demo when Demucs is not installed.
+Limbus Split Pro — Separation Engine v3
+Uses Demucs (Meta Research) via subprocess for real AI stem separation.
+Falls back to spectral heuristic when Demucs/PyTorch are unavailable.
 """
 
 import os
 import sys
 import json
+import math
 import shutil
+import struct
 import subprocess
 import tempfile
+import wave
 
 
 # ──────────────────────────────────────────────────────────────────
-# Helpers
+# Stem metadata
 # ──────────────────────────────────────────────────────────────────
 
-def _report(callback, percentage: float, stage: str, model: str = "Demucs", device: str = "CPU"):
-    if callback:
-        callback({
-            "type": "progress",
-            "percentage": round(percentage, 2),
-            "stage": stage,
-            "model": model,
-            "device": device,
-        })
-
-
-def _demucs_available() -> bool:
-    """
-    Returns True only when Demucs AND all its dependencies (numpy, torch, etc.)
-    are importable. A shallow 'import demucs' can succeed while deeper imports
-    (e.g. demucs.apply → numpy) still fail.
-    """
-    try:
-        import numpy          # noqa – required by demucs internals
-        import torch          # noqa – required by demucs
-        import demucs.separate  # noqa – triggers the full import chain
-        return True
-    except (ImportError, ModuleNotFoundError):
-        return False
-
-
-def _ffmpeg_available() -> bool:
-    return shutil.which("ffmpeg") is not None
-
-
-def _install_demucs(callback=None):
-    """Try to pip-install demucs silently. Returns True on success."""
-    _report(callback, 2.0, "Instalando Demucs (primera vez)…")
-    try:
-        result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "demucs", "--quiet", "--no-warn-script-location"],
-            capture_output=True, text=True, timeout=300
-        )
-        return result.returncode == 0
-    except Exception:
-        return False
-
-
-# ──────────────────────────────────────────────────────────────────
-# Demucs-based separation (real AI)
-# ──────────────────────────────────────────────────────────────────
-
-# Mapping from our stem IDs to Demucs model outputs
-_DEMUCS_MODELS = {
-    # htdemucs_6s gives: vocals, drums, bass, guitar, piano, other
-    "htdemucs_6s": ["vocals", "drums", "bass", "guitar", "piano", "other"],
-    # htdemucs (4-stem): vocals, drums, bass, other
-    "htdemucs":    ["vocals", "drums", "bass", "other"],
-}
-
-# Our stem IDs → which Demucs output file to use
-_STEM_TO_DEMUCS = {
-    "vocals":          ("vocals",  "htdemucs_6s"),
-    "lead_vocal":      ("vocals",  "htdemucs_6s"),
-    "backing_vocals":  ("vocals",  "htdemucs_6s"),
-    "vocal_fx":        ("vocals",  "htdemucs_6s"),
-    "noise":           ("other",   "htdemucs_6s"),
-    "drums":           ("drums",   "htdemucs_6s"),
-    "kick":            ("drums",   "htdemucs_6s"),
-    "snare":           ("drums",   "htdemucs_6s"),
-    "toms":            ("drums",   "htdemucs_6s"),
-    "cymbals":         ("drums",   "htdemucs_6s"),
-    "bass":            ("bass",    "htdemucs_6s"),
-    "guitar_acoustic": ("guitar",  "htdemucs_6s"),
-    "guitar_electric": ("guitar",  "htdemucs_6s"),
-    "piano":           ("piano",   "htdemucs_6s"),
-    "other":           ("other",   "htdemucs_6s"),
-}
-
-# Human-readable names for our stem IDs
-_STEM_DISPLAY_NAMES = {
+STEM_DISPLAY_NAMES = {
     "vocals":          "Voces",
-    "lead_vocal":      "Voz Principal",
-    "backing_vocals":  "Coros y Segundas",
-    "vocal_fx":        "Efectos Vocales",
-    "noise":           "Ruido y Artefactos",
-    "drums":           "Batería Completa",
+    "lead_vocal":      "Voz_Principal",
+    "backing_vocals":  "Coros_y_Segundas",
+    "vocal_fx":        "Efectos_Vocales",
+    "noise":           "Ruido",
+    "drums":           "Bateria_Completa",
     "kick":            "Bombo",
     "snare":           "Caja",
     "toms":            "Toms",
     "cymbals":         "Platos",
     "bass":            "Bajo",
-    "guitar_acoustic": "Guitarra Acústica",
-    "guitar_electric": "Guitarra Eléctrica",
-    "piano":           "Piano y Teclados",
-    "other":           "Other (Residual)",
+    "guitar_acoustic": "Guitarra_Acustica",
+    "guitar_electric": "Guitarra_Electrica",
+    "piano":           "Piano_y_Teclados",
+    "other":           "Other",
+}
+
+# Mapping: our stem ID → Demucs output stem name
+# htdemucs_6s produces: vocals, drums, bass, guitar, piano, other
+# htdemucs (4s)  produces: vocals, drums, bass, other
+STEM_TO_DEMUCS = {
+    "vocals":          "vocals",
+    "lead_vocal":      "vocals",
+    "backing_vocals":  "vocals",
+    "vocal_fx":        "vocals",
+    "noise":           "other",
+    "drums":           "drums",
+    "kick":            "drums",
+    "snare":           "drums",
+    "toms":            "drums",
+    "cymbals":         "drums",
+    "bass":            "bass",
+    "guitar_acoustic": "guitar",
+    "guitar_electric": "guitar",
+    "piano":           "piano",
+    "other":           "other",
 }
 
 
-def separate_with_demucs(input_file: str, output_dir: str, requested_stems: list, device: str, callback) -> dict:
-    """Run Demucs separation and map outputs to our stem IDs."""
-    from demucs.separate import main as demucs_main
+# ──────────────────────────────────────────────────────────────────
+# Progress helper
+# ──────────────────────────────────────────────────────────────────
 
-    # Pick model: use 6-stem if any guitar/piano requested
-    six_stem_stems = {"guitar_acoustic", "guitar_electric", "piano", "guitar"}
-    needs_6s = any(s in six_stem_stems for s in requested_stems)
-    model_name = "htdemucs_6s" if needs_6s else "htdemucs"
-
-    _report(callback, 8.0, f"Cargando modelo {model_name}…", model_name, device)
-
-    # Demucs device flag
-    demucs_device = "cpu"
-    if device.lower() in ("gpu", "cuda"):
-        demucs_device = "cuda"
-    elif device.lower() == "directml":
-        demucs_device = "cpu"  # Demucs doesn't support DirectML directly
-
-    # Run demucs via its Python API
-    tmp_out = tempfile.mkdtemp(prefix="limbus_demucs_")
-    try:
-        sys_argv_backup = sys.argv.copy()
-        sys.argv = [
-            "demucs",
-            "-n", model_name,
-            "-d", demucs_device,
-            "--out", tmp_out,
-            input_file,
-        ]
-        _report(callback, 15.0, "Iniciando separación con IA…", model_name, device)
-        demucs_main()
-        sys.argv = sys_argv_backup
-    except SystemExit:
-        sys.argv = sys_argv_backup
-    except Exception as e:
-        sys.argv = sys_argv_backup
-        raise RuntimeError(f"Demucs falló: {e}") from e
-
-    _report(callback, 75.0, "Separación completada, exportando pistas…", model_name, device)
-
-    # Locate Demucs output directory: tmp_out/<model>/<songname>/
-    song_name = os.path.splitext(os.path.basename(input_file))[0]
-    demucs_stems_dir = os.path.join(tmp_out, model_name, song_name)
-
-    if not os.path.isdir(demucs_stems_dir):
-        raise RuntimeError(f"No se encontraron pistas en {demucs_stems_dir}")
-
-    # Build a map: demucs_stem_name → wav_path
-    available = {}
-    for fname in os.listdir(demucs_stems_dir):
-        stem_name = os.path.splitext(fname)[0]  # e.g. "vocals"
-        available[stem_name] = os.path.join(demucs_stems_dir, fname)
-
-    os.makedirs(output_dir, exist_ok=True)
-
-    generated_files = {}
-    already_copied = {}  # demucs_stem → our_output_path (avoid duplicate copies)
-
-    total = len(requested_stems)
-    for idx, stem_id in enumerate(requested_stems):
-        progress = 75.0 + (idx / total) * 20.0
-        display = _STEM_DISPLAY_NAMES.get(stem_id, stem_id)
-        _report(callback, progress, f"Exportando {display}…", model_name, device)
-
-        demucs_stem, _ = _STEM_TO_DEMUCS.get(stem_id, ("other", model_name))
-
-        if demucs_stem not in available:
-            # Try 4-stem fallback
-            if demucs_stem in ("guitar", "piano") and "other" in available:
-                demucs_stem = "other"
-            else:
-                continue
-
-        src = available[demucs_stem]
-
-        # Use cached copy if same demucs stem already exported
-        if demucs_stem in already_copied:
-            generated_files[stem_id] = already_copied[demucs_stem]
-            continue
-
-        safe_name = display.replace(" ", "_").replace("/", "-")
-        dst = os.path.join(output_dir, f"{safe_name}.wav")
-        shutil.copy2(src, dst)
-        generated_files[stem_id] = dst
-        already_copied[demucs_stem] = dst
-
-    # Cleanup temp files
-    try:
-        shutil.rmtree(tmp_out, ignore_errors=True)
-    except Exception:
-        pass
-
-    return generated_files
+def _report(callback, pct: float, stage: str, model: str = "Demucs", device: str = "CPU"):
+    if callback:
+        callback({"type": "progress", "percentage": round(pct, 1),
+                  "stage": stage, "model": model, "device": device})
 
 
 # ──────────────────────────────────────────────────────────────────
-# Fallback: spectral heuristic separation (no ML, demonstration)
+# WAV helpers (pure stdlib — no numpy)
 # ──────────────────────────────────────────────────────────────────
 
 def _read_wav_pure(file_path: str):
-    import wave, struct
     with wave.open(file_path, 'rb') as wf:
         n_ch = wf.getnchannels()
-        sw = wf.getsampwidth()
-        sr = wf.getframerate()
-        nf = wf.getnframes()
-        raw = wf.readframes(nf)
+        sw   = wf.getsampwidth()
+        sr   = wf.getframerate()
+        nf   = wf.getnframes()
+        raw  = wf.readframes(nf)
         if sw != 2:
             raise ValueError("Solo WAV PCM 16-bit en modo fallback.")
-        n_samp = nf * n_ch
-        unpacked = struct.unpack(f"<{n_samp}h", raw)
-        samples = [x / 32768.0 for x in unpacked]
+        unpacked = struct.unpack(f"<{nf * n_ch}h", raw)
+        samples  = [x / 32768.0 for x in unpacked]
         channels = [samples[ch::n_ch] for ch in range(n_ch)]
     return channels, sr
 
 
-def _write_wav_pure(file_path: str, channels, sample_rate: int):
-    import wave, struct
+def _write_wav_pure(file_path: str, channels, sr: int):
     os.makedirs(os.path.dirname(os.path.abspath(file_path)), exist_ok=True)
-    n_ch = len(channels)
+    n_ch   = len(channels)
     n_samp = len(channels[0])
-    interleaved = []
+    il     = []
     for i in range(n_samp):
         for ch in range(n_ch):
-            val = max(-1.0, min(1.0, channels[ch][i]))
-            interleaved.append(int(round(val * 32768.0)))
-    raw = struct.pack(f"<{len(interleaved)}h", *[max(-32768, min(32767, x)) for x in interleaved])
+            il.append(max(-32768, min(32767, int(round(max(-1.0, min(1.0, channels[ch][i])) * 32768.0)))))
     with wave.open(file_path, 'wb') as wf:
-        wf.setnchannels(n_ch)
-        wf.setsampwidth(2)
-        wf.setframerate(sample_rate)
-        wf.writeframes(raw)
+        wf.setnchannels(n_ch); wf.setsampwidth(2); wf.setframerate(sr)
+        wf.writeframes(struct.pack(f"<{len(il)}h", *il))
 
 
-def separate_fallback(input_file: str, output_dir: str, requested_stems: list, device: str, callback) -> dict:
+# ──────────────────────────────────────────────────────────────────
+# Demucs availability & installation
+# ──────────────────────────────────────────────────────────────────
+
+def _run_pip(packages: list, callback=None) -> bool:
+    """Install one or more pip packages. Returns True on success."""
+    cmd = [sys.executable, "-m", "pip", "install", *packages,
+           "--quiet", "--no-warn-script-location"]
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        return r.returncode == 0
+    except Exception:
+        return False
+
+
+def _demucs_runnable() -> bool:
     """
-    Heuristic separation — real frequency-domain split using FFT.
-    Not ML quality, but produces distinct stems.
+    Check if 'python -m demucs --help' exits cleanly.
+    This is the only reliable test — it exercises the full runtime.
     """
-    import math
+    try:
+        r = subprocess.run(
+            [sys.executable, "-m", "demucs", "--help"],
+            capture_output=True, text=True, timeout=15
+        )
+        return r.returncode == 0
+    except Exception:
+        return False
 
-    _report(callback, 5.0, "Cargando audio (modo demo sin Demucs)…", "Heurístico-FFT", device)
+
+def _ensure_demucs(callback=None) -> bool:
+    """
+    Make sure demucs is runnable. Install numpy + demucs if needed.
+    Returns True if demucs is ready to use.
+    """
+    if _demucs_runnable():
+        return True
+
+    _report(callback, 1.0, "Instalando numpy…", "setup")
+    if not _run_pip(["numpy>=1.24.0"], callback):
+        return False
+
+    _report(callback, 3.0, "Instalando demucs (puede tardar 1-2 min)…", "setup")
+    if not _run_pip(["demucs"], callback):
+        return False
+
+    # Final check
+    return _demucs_runnable()
+
+
+# ──────────────────────────────────────────────────────────────────
+# Real AI separation — Demucs via subprocess
+# ──────────────────────────────────────────────────────────────────
+
+def separate_with_demucs(input_file: str, output_dir: str,
+                         requested_stems: list, device: str, callback) -> dict:
+    """
+    Runs Demucs as a child process: python -m demucs ...
+    Avoids all Python import-chain issues. Streams stderr for progress.
+    """
+    six_stem = {"guitar_acoustic", "guitar_electric", "piano", "guitar"}
+    needs_6s = any(s in six_stem for s in requested_stems)
+    model    = "htdemucs_6s" if needs_6s else "htdemucs"
+
+    demucs_device = "cpu"
+    if device.lower() in ("gpu", "cuda"):
+        demucs_device = "cuda"
+
+    _report(callback, 8.0, f"Cargando modelo {model} (primera vez descarga ~150 MB)…",
+            model, device)
+
+    tmp_out = tempfile.mkdtemp(prefix="limbus_demucs_")
+    try:
+        cmd = [
+            sys.executable, "-m", "demucs",
+            "-n", model,
+            "-d", demucs_device,
+            "--out", tmp_out,
+            input_file,
+        ]
+
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        # Stream output and fake progress 10→75%
+        fake_pct = 10.0
+        for line in proc.stdout:
+            line = line.rstrip()
+            if line:
+                # Extract percentage if demucs prints one
+                pct_token = None
+                for token in line.split():
+                    token = token.strip("%|")
+                    try:
+                        v = float(token)
+                        if 0 < v <= 100:
+                            pct_token = v
+                            break
+                    except ValueError:
+                        pass
+
+                if pct_token is not None:
+                    fake_pct = 10.0 + pct_token * 0.65
+                else:
+                    fake_pct = min(fake_pct + 0.5, 74.0)
+
+                stage = line if len(line) < 80 else line[:77] + "…"
+                _report(callback, fake_pct, stage, model, device)
+
+        proc.wait()
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f"Demucs terminó con código {proc.returncode}. "
+                "Asegúrate de tener al menos 4 GB de RAM libres."
+            )
+
+        _report(callback, 78.0, "Separación completada, exportando pistas…", model, device)
+
+        # Locate stems: tmp_out/<model>/<songname>/<stem>.wav
+        song_name = os.path.splitext(os.path.basename(input_file))[0]
+        stems_dir = os.path.join(tmp_out, model, song_name)
+        if not os.path.isdir(stems_dir):
+            # Some versions use a flattened layout
+            stems_dir = tmp_out
+
+        available = {}
+        for fname in os.listdir(stems_dir):
+            if fname.lower().endswith(".wav") or fname.lower().endswith(".mp3"):
+                stem_name = os.path.splitext(fname)[0]
+                available[stem_name] = os.path.join(stems_dir, fname)
+
+        if not available:
+            raise RuntimeError(f"Demucs no generó archivos en {stems_dir}.")
+
+        os.makedirs(output_dir, exist_ok=True)
+        generated  = {}
+        copied_map = {}  # demucs_stem → dest path (avoid duplicates)
+
+        total = len(requested_stems)
+        for idx, stem_id in enumerate(requested_stems):
+            pct     = 78.0 + (idx / total) * 17.0
+            display = STEM_DISPLAY_NAMES.get(stem_id, stem_id)
+            _report(callback, pct, f"Exportando {display}…", model, device)
+
+            demucs_stem = STEM_TO_DEMUCS.get(stem_id, "other")
+            if demucs_stem not in available:
+                demucs_stem = "other"
+            if demucs_stem not in available:
+                continue
+
+            if demucs_stem in copied_map:
+                generated[stem_id] = copied_map[demucs_stem]
+                continue
+
+            ext = os.path.splitext(available[demucs_stem])[1]
+            dst = os.path.join(output_dir, f"{display}{ext}")
+            shutil.copy2(available[demucs_stem], dst)
+            generated[stem_id] = dst
+            copied_map[demucs_stem] = dst
+
+        return generated
+
+    finally:
+        shutil.rmtree(tmp_out, ignore_errors=True)
+
+
+# ──────────────────────────────────────────────────────────────────
+# Fallback: spectral heuristic (no ML — for demo / offline)
+# ──────────────────────────────────────────────────────────────────
+
+def separate_fallback(input_file: str, output_dir: str,
+                      requested_stems: list, device: str, callback) -> dict:
+    """
+    Frequency-domain heuristic separation using simple IIR filters.
+    No ML quality — for demo only. Requires WAV PCM 16-bit input.
+    """
+    _report(callback, 5.0, "Modo demo (sin Demucs) — separación por frecuencias…",
+            "Heurístico", device)
 
     if not input_file.lower().endswith(".wav"):
         raise RuntimeError(
-            "El modo demo solo acepta archivos WAV. "
-            "Para separación real instala Demucs: pip install demucs"
+            "El modo demo solo admite archivos WAV. "
+            "Para separación real instala Demucs: pip install numpy demucs"
         )
 
     channels, sr = _read_wav_pure(input_file)
-    n_ch = len(channels)
-    n = len(channels[0])
 
-    _report(callback, 15.0, "Análisis espectral (FFT)…", "Heurístico-FFT", device)
-
-    # Simple frequency-range masks
-    # vocals: 200 Hz – 4 kHz  → bin indices
-    # bass:   20  Hz – 250 Hz
-    # drums:  broadband + transients
-    # other:  everything left
-
-    def freq_to_bin(hz, n_fft, sr):
-        return max(0, min(n_fft // 2, int(hz * n_fft / sr)))
-
-    block = 2048
-    hop   = 1024
-
-    def stft_block(sig):
-        out_r, out_i = [], []
-        for start in range(0, len(sig) - block, hop):
-            frame = sig[start:start + block]
-            if len(frame) < block:
-                break
-            # DFT of block
-            r_row, i_row = [], []
-            for k in range(block // 2 + 1):
-                re = sum(frame[t] * math.cos(2 * math.pi * k * t / block) for t in range(block))
-                im = sum(frame[t] * math.sin(2 * math.pi * k * t / block) for t in range(block))
-                r_row.append(re / block)
-                i_row.append(im / block)
-            out_r.append(r_row)
-            out_i.append(i_row)
-        return out_r, out_i
-
-    # For speed use a much simpler approach: time-domain filtering with a running average
-    def lowpass(sig, cutoff_hz, sr):
-        alpha = 2 * math.pi * cutoff_hz / sr
-        alpha = alpha / (alpha + 1)
-        out = [0.0] * len(sig)
-        prev = 0.0
+    def lowpass(sig, hz):
+        a = (2 * math.pi * hz / sr) / (2 * math.pi * hz / sr + 1)
+        out, prev = [0.0] * len(sig), 0.0
         for i, x in enumerate(sig):
-            prev = prev + alpha * (x - prev)
-            out[i] = prev
+            prev = prev + a * (x - prev); out[i] = prev
         return out
 
-    def highpass(sig, cutoff_hz, sr):
-        lp = lowpass(sig, cutoff_hz, sr)
+    def highpass(sig, hz):
+        lp = lowpass(sig, hz)
         return [sig[i] - lp[i] for i in range(len(sig))]
 
-    def bandpass(sig, lo_hz, hi_hz, sr):
-        return highpass(lowpass(sig, hi_hz, sr), lo_hz, sr)
+    def bandpass(sig, lo, hi):
+        return highpass(lowpass(sig, hi), lo)
 
-    def scale(sig, factor):
-        return [x * factor for x in sig]
+    def scale(sig, f):
+        return [x * f for x in sig]
+
+    OPS = {
+        "vocals":          lambda ch: bandpass(ch, 200,  4000),
+        "lead_vocal":      lambda ch: bandpass(ch, 300,  3500),
+        "backing_vocals":  lambda ch: bandpass(ch, 250,  3800),
+        "vocal_fx":        lambda ch: scale(bandpass(ch, 1000, 8000), 0.6),
+        "noise":           lambda ch: scale(highpass(ch, 8000), 0.5),
+        "drums":           lambda ch: highpass(ch, 100),
+        "kick":            lambda ch: lowpass(ch, 120),
+        "snare":           lambda ch: bandpass(ch, 150,  500),
+        "toms":            lambda ch: bandpass(ch, 80,   400),
+        "cymbals":         lambda ch: highpass(ch, 5000),
+        "bass":            lambda ch: lowpass(ch, 250),
+        "guitar_acoustic": lambda ch: bandpass(ch, 80,   5000),
+        "guitar_electric": lambda ch: bandpass(ch, 100,  6000),
+        "piano":           lambda ch: bandpass(ch, 30,   4200),
+        "other":           lambda ch: bandpass(ch, 500,  3000),
+    }
 
     os.makedirs(output_dir, exist_ok=True)
     generated = {}
+    total     = len(requested_stems)
 
-    stem_ops = {
-        "vocals":          lambda ch: bandpass(ch, 200, 4000, sr),
-        "lead_vocal":      lambda ch: bandpass(ch, 300, 3500, sr),
-        "backing_vocals":  lambda ch: bandpass(ch, 250, 3800, sr),
-        "vocal_fx":        lambda ch: scale(bandpass(ch, 1000, 8000, sr), 0.6),
-        "noise":           lambda ch: scale(highpass(ch, 8000, sr), 0.5),
-        "drums":           lambda ch: highpass(ch, 100, sr),
-        "kick":            lambda ch: lowpass(ch, 120, sr),
-        "snare":           lambda ch: bandpass(ch, 150, 500, sr),
-        "toms":            lambda ch: bandpass(ch, 80, 400, sr),
-        "cymbals":         lambda ch: highpass(ch, 5000, sr),
-        "bass":            lambda ch: lowpass(ch, 250, sr),
-        "guitar_acoustic": lambda ch: bandpass(ch, 80, 5000, sr),
-        "guitar_electric": lambda ch: bandpass(ch, 100, 6000, sr),
-        "piano":           lambda ch: bandpass(ch, 30, 4200, sr),
-        "other":           lambda ch: bandpass(ch, 500, 3000, sr),
-    }
-
-    total = len(requested_stems)
     for idx, stem_id in enumerate(requested_stems):
-        progress = 20.0 + (idx / total) * 70.0
-        display = _STEM_DISPLAY_NAMES.get(stem_id, stem_id)
-        _report(callback, progress, f"Procesando {display} (demo)…", "Heurístico-FFT", device)
+        pct     = 10.0 + (idx / total) * 80.0
+        display = STEM_DISPLAY_NAMES.get(stem_id, stem_id)
+        _report(callback, pct, f"Procesando {display} (demo)…", "Heurístico", device)
 
-        op = stem_ops.get(stem_id, lambda ch: ch)
+        op          = OPS.get(stem_id, lambda ch: ch)
         out_channels = [op(ch) for ch in channels]
-
-        safe_name = display.replace(" ", "_").replace("/", "-")
-        dst = os.path.join(output_dir, f"{safe_name}.wav")
+        dst          = os.path.join(output_dir, f"{display}.wav")
         _write_wav_pure(dst, out_channels, sr)
         generated[stem_id] = dst
 
@@ -354,47 +347,40 @@ def separate_fallback(input_file: str, output_dir: str, requested_stems: list, d
 
 
 # ──────────────────────────────────────────────────────────────────
-# Public engine class (used by cli_runner.py)
+# Public engine class (called by cli_runner.py)
 # ──────────────────────────────────────────────────────────────────
 
 class LimbusSeparatorEngine:
     def __init__(self, models_dir: str = "", progress_callback=None):
-        self.models_dir = models_dir
+        self.models_dir        = models_dir
         self.progress_callback = progress_callback
 
-    def report_progress(self, percentage: float, stage: str, model_name: str = "Demucs", device: str = "CPU"):
+    def report_progress(self, pct, stage, model="Demucs", device="CPU"):
         if self.progress_callback:
-            self.progress_callback({
-                "type": "progress",
-                "percentage": round(percentage, 2),
-                "stage": stage,
-                "model": model_name,
-                "device": device,
-            })
+            self.progress_callback({"type": "progress", "percentage": round(pct, 1),
+                                    "stage": stage, "model": model, "device": device})
 
-    def process(self, input_file: str, output_dir: str, requested_stems: list, device: str = "Auto") -> dict:
+    def process(self, input_file: str, output_dir: str,
+                requested_stems: list, device: str = "Auto") -> dict:
         cb = self.progress_callback
 
-        # Check if Demucs (with all dependencies) is available
-        if not _demucs_available():
-            self.report_progress(1.0, "Demucs no encontrado — intentando instalar…")
-            _install_demucs(cb)
+        # Step 1: try to get Demucs working (install if needed)
+        _report(cb, 0.5, "Verificando motor de IA…")
+        demucs_ready = _ensure_demucs(cb)
 
-        # Re-check after potential install: demucs must be FULLY usable
-        if not _demucs_available():
-            self.report_progress(5.0,
-                "⚠️  Demucs/numpy no disponibles — usando separación por frecuencias.",
-                "Heurístico-FFT", device)
+        if not demucs_ready:
+            _report(cb, 5.0,
+                "⚠️ Demucs no disponible — usando separación por frecuencias (demo).\n"
+                "Para separación real: pip install numpy demucs",
+                "Heurístico", device)
             return separate_fallback(input_file, output_dir, requested_stems, device, cb)
 
-        # Demucs is confirmed fully available — use real AI separation
-        self.report_progress(3.0, "Demucs disponible — iniciando separación real…", "Demucs-htdemucs", device)
+        # Step 2: run Demucs
+        _report(cb, 6.0, "Iniciando separación con IA (Demucs)…", "Demucs", device)
         try:
             return separate_with_demucs(input_file, output_dir, requested_stems, device, cb)
-        except (ImportError, ModuleNotFoundError) as e:
-            # Runtime import failure (e.g. numpy was importable but broken)
-            self.report_progress(5.0,
-                f"⚠️  Demucs falló al cargar ({e}) — usando separación por frecuencias.",
-                "Heurístico-FFT", device)
+        except Exception as e:
+            _report(cb, 5.0,
+                f"⚠️ Demucs falló ({e}) — usando separación por frecuencias.",
+                "Heurístico", device)
             return separate_fallback(input_file, output_dir, requested_stems, device, cb)
-
