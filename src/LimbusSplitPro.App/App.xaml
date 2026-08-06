@@ -17,6 +17,7 @@
             <helpers:PlayPauseIconConverter x:Key="PlayPauseIconConverter" />
             <helpers:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter" />
             <helpers:StringNotEmptyToVisibilityConverter x:Key="StringNotEmptyToVisibilityConverter" />
+            <helpers:HexColorToBrushConverter x:Key="HexColorToBrushConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

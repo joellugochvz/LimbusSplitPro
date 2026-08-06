@@ -62,6 +62,9 @@ public partial class MainViewModel : ObservableObject
 
     public int GeneratedTrackCount => MixerTracks.Count;
 
+    public bool HasResults => MixerTracks.Count > 0;
+    public bool HasNoResults => MixerTracks.Count == 0;
+
     [ObservableProperty]
     private double _seekSliderValue;
 
@@ -155,8 +158,10 @@ public partial class MainViewModel : ObservableObject
 
             if (result.Status == JobStatus.Completed)
             {
+                IsProcessing = false; // Must be false BEFORE loading mixer so State 3 triggers
                 StatusMessage = "¡Separación completada con éxito!";
                 SeparationStateText = "La exportación está preparada.";
+                CurrentStageText = "✅ Separación completada";
                 LoadGeneratedTracksIntoMixer(result.GeneratedStemFiles);
             }
             else
@@ -241,6 +246,8 @@ public partial class MainViewModel : ObservableObject
         UpdateFormattedTime();
 
         OnPropertyChanged(nameof(GeneratedTrackCount));
+        OnPropertyChanged(nameof(HasResults));
+        OnPropertyChanged(nameof(HasNoResults));
     }
 
     [RelayCommand]

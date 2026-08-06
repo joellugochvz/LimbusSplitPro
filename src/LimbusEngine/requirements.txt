@@ -1,0 +1,11 @@
+# Limbus Split Pro — Python Engine Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core AI separation engine (Meta Research)
+demucs>=4.0.0
+
+# Audio I/O (used internally by Demucs)
+torchaudio>=2.0.0
+
+# Optional: GPU acceleration via CUDA
+# torch>=2.0.0+cu121  # uncomment for NVIDIA GPU support
