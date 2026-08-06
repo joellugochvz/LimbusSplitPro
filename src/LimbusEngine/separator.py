@@ -375,15 +375,26 @@ class LimbusSeparatorEngine:
     def process(self, input_file: str, output_dir: str, requested_stems: list, device: str = "Auto") -> dict:
         cb = self.progress_callback
 
-        # Try Demucs first; auto-install if missing
+        # Check if Demucs (with all dependencies) is available
         if not _demucs_available():
             self.report_progress(1.0, "Demucs no encontrado — intentando instalar…")
-            installed = _install_demucs(cb)
-            if not installed:
-                self.report_progress(5.0,
-                    "⚠️  Demucs no pudo instalarse — usando modo demo (WAV PCM requerido).",
-                    "Heurístico-FFT", device)
-                return separate_fallback(input_file, output_dir, requested_stems, device, cb)
+            _install_demucs(cb)
 
+        # Re-check after potential install: demucs must be FULLY usable
+        if not _demucs_available():
+            self.report_progress(5.0,
+                "⚠️  Demucs/numpy no disponibles — usando separación por frecuencias.",
+                "Heurístico-FFT", device)
+            return separate_fallback(input_file, output_dir, requested_stems, device, cb)
+
+        # Demucs is confirmed fully available — use real AI separation
         self.report_progress(3.0, "Demucs disponible — iniciando separación real…", "Demucs-htdemucs", device)
-        return separate_with_demucs(input_file, output_dir, requested_stems, device, cb)
+        try:
+            return separate_with_demucs(input_file, output_dir, requested_stems, device, cb)
+        except (ImportError, ModuleNotFoundError) as e:
+            # Runtime import failure (e.g. numpy was importable but broken)
+            self.report_progress(5.0,
+                f"⚠️  Demucs falló al cargar ({e}) — usando separación por frecuencias.",
+                "Heurístico-FFT", device)
+            return separate_fallback(input_file, output_dir, requested_stems, device, cb)
+
