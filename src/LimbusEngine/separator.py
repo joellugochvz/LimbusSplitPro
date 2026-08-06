@@ -152,6 +152,76 @@ def _ensure_demucs(callback=None) -> bool:
 
 
 # ──────────────────────────────────────────────────────────────────
+# 2-pass drum component splitter
+# ──────────────────────────────────────────────────────────────────
+
+def _lowpass_iir(sig: list, cutoff_hz: float, sr: int) -> list:
+    """Single-pole IIR lowpass filter."""
+    rc    = 1.0 / (2.0 * math.pi * cutoff_hz)
+    dt    = 1.0 / sr
+    alpha = dt / (rc + dt)
+    out   = [0.0] * len(sig)
+    prev  = sig[0] if sig else 0.0
+    for i, x in enumerate(sig):
+        prev = prev + alpha * (x - prev)
+        out[i] = prev
+    return out
+
+
+def _highpass_iir(sig: list, cutoff_hz: float, sr: int) -> list:
+    lp = _lowpass_iir(sig, cutoff_hz, sr)
+    return [sig[i] - lp[i] for i in range(len(sig))]
+
+
+def _bandpass_iir(sig: list, lo: float, hi: float, sr: int) -> list:
+    return _highpass_iir(_lowpass_iir(sig, hi, sr), lo, sr)
+
+
+def _extract_drum_component(stem_id: str, drums_wav: str,
+                             output_dir: str, display_name: str) -> str:
+    """
+    2nd-pass drum separation.
+    Reads the Demucs 'drums' stem (already isolated from vocals/bass/guitar)
+    and applies tuned frequency-domain filters to split drum components.
+
+    Frequency ranges used (after studying acoustic drum spectra):
+      kick   : 20–120 Hz  — fundamental + low boom
+      snare  : 150–800 Hz + 2-6 kHz snap (two bands summed)
+      toms   : 60–400 Hz  — body of toms
+      cymbals: 5 kHz+     — hi-hats, rides, crashes
+    """
+    channels, sr = _read_wav_pure(drums_wav)
+
+    if stem_id == "kick":
+        # Low-frequency thump: two lowpass passes for steeper rolloff
+        processed = [_lowpass_iir(_lowpass_iir(ch, 110, sr), 110, sr) for ch in channels]
+
+    elif stem_id == "snare":
+        # Snare body (150-800 Hz) + attack transient/snap (2-6 kHz), summed
+        processed = []
+        for ch in channels:
+            body  = _bandpass_iir(ch, 150, 800, sr)
+            snap  = _bandpass_iir(ch, 2000, 6000, sr)
+            combined = [body[i] * 0.7 + snap[i] * 0.5 for i in range(len(ch))]
+            processed.append(combined)
+
+    elif stem_id == "toms":
+        # Tom body: 60-400 Hz
+        processed = [_bandpass_iir(ch, 60, 400, sr) for ch in channels]
+
+    elif stem_id == "cymbals":
+        # Cymbals: above 5 kHz (hi-hats, crashes, rides)
+        processed = [_highpass_iir(ch, 5000, sr) for ch in channels]
+
+    else:
+        return ""
+
+    dst = os.path.join(output_dir, f"{display_name}.wav")
+    _write_wav_pure(dst, processed, sr)
+    return dst
+
+
+# ──────────────────────────────────────────────────────────────────
 # Real AI separation — Demucs via subprocess
 # ──────────────────────────────────────────────────────────────────
 
@@ -244,11 +314,25 @@ def separate_with_demucs(input_file: str, output_dir: str,
         generated  = {}
         copied_map = {}  # demucs_stem → dest path (avoid duplicates)
 
+        # Which drum sub-components did the user request?
+        DRUM_COMPONENTS = {"kick", "snare", "toms", "cymbals"}
+        requested_drum_components = [s for s in requested_stems if s in DRUM_COMPONENTS]
+        needs_drum_split = len(requested_drum_components) > 0
+
         total = len(requested_stems)
         for idx, stem_id in enumerate(requested_stems):
             pct     = 78.0 + (idx / total) * 17.0
             display = STEM_DISPLAY_NAMES.get(stem_id, stem_id)
             _report(callback, pct, f"Exportando {display}…", model, device)
+
+            # Drum sub-components: apply 2nd-pass IIR on the isolated drums stem
+            if stem_id in DRUM_COMPONENTS and "drums" in available:
+                dst = _extract_drum_component(
+                    stem_id, available["drums"], output_dir, display
+                )
+                if dst:
+                    generated[stem_id] = dst
+                continue
 
             demucs_stem = STEM_TO_DEMUCS.get(stem_id, "other")
             if demucs_stem not in available:
@@ -258,6 +342,7 @@ def separate_with_demucs(input_file: str, output_dir: str,
 
             if demucs_stem in copied_map:
                 generated[stem_id] = copied_map[demucs_stem]
+
                 continue
 
             ext = os.path.splitext(available[demucs_stem])[1]
