@@ -223,7 +223,7 @@ def _extract_vocal_component(stem_id: str, vocals_wav: str,
     return dst
 
 
-
+def _extract_drum_component(stem_id: str, drums_wav: str,
                              output_dir: str, display_name: str) -> str:
     """
     2nd-pass drum separation.
