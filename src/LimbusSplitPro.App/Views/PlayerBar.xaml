@@ -32,18 +32,49 @@
 
                 <!-- Transport Controls -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- Play/Pause: Cyan circle -->
+                    <!-- Play/Pause: Cyan circle with vector icon (no emoji) -->
                     <Button Command="{Binding PlayPauseCommand}" Width="36" Height="36" Padding="0" Margin="0,0,6,0" Cursor="Hand">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="playBorder" Background="#00F0FF" CornerRadius="18">
-                                    <TextBlock Text="{Binding IsPlaying, Converter={StaticResource PlayPauseIconConverter}, FallbackValue='▶'}" FontSize="14" Foreground="#0A0A0F" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" />
+                                    <Grid Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <!-- PLAY state: filled triangle -->
+                                        <Path x:Name="playIcon" Fill="#0A0A0F" Stretch="Uniform"
+                                              Data="M 0,0 L 10,5 L 0,10 Z">
+                                            <Path.Style>
+                                                <Style TargetType="Path">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Path.Style>
+                                        </Path>
+                                        <!-- PAUSE state: two vertical bars -->
+                                        <StackPanel x:Name="pauseIcon" Orientation="Horizontal"
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <StackPanel.Style>
+                                                <Style TargetType="StackPanel">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </StackPanel.Style>
+                                            <Border Width="3" Height="12" Background="#0A0A0F" CornerRadius="1" Margin="0,0,2,0" />
+                                            <Border Width="3" Height="12" Background="#0A0A0F" CornerRadius="1" />
+                                        </StackPanel>
+                                    </Grid>
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter TargetName="playBorder" Property="Effect">
                                             <Setter.Value>
-                                                <DropShadowEffect Color="#00F0FF" BlurRadius="12" ShadowDepth="0" Opacity="0.5" />
+                                                <DropShadowEffect Color="#00F0FF" BlurRadius="12" ShadowDepth="0" Opacity="0.6" />
                                             </Setter.Value>
                                         </Setter>
                                     </Trigger>
