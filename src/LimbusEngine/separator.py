@@ -182,35 +182,45 @@ def _extract_drum_component(stem_id: str, drums_wav: str,
     """
     2nd-pass drum separation.
     Reads the Demucs 'drums' stem (already isolated from vocals/bass/guitar)
-    and applies tuned frequency-domain filters to split drum components.
+    and applies tuned IIR filters to split drum components.
 
-    Frequency ranges used (after studying acoustic drum spectra):
-      kick   : 20–120 Hz  — fundamental + low boom
-      snare  : 150–800 Hz + 2-6 kHz snap (two bands summed)
-      toms   : 60–400 Hz  — body of toms
-      cymbals: 5 kHz+     — hi-hats, rides, crashes
+    CALIBRATED from user testing:
+      kick   : 60-400 Hz bandpass  — user confirmed this range captures kick
+               (what was labelled 'toms' filter range actually sounded like kick)
+      snare  : 200-900 Hz (body, raised from 150 to avoid kick bleed)
+               + 2.5-7 kHz (snap/attack transient), blended 60/40
+      toms   : 80-350 Hz with slight low-shelf boost — overlaps kick but lower
+               energy in very low end
+      cymbals: 5 kHz+ highpass (hi-hats, rides, crashes)
     """
     channels, sr = _read_wav_pure(drums_wav)
 
     if stem_id == "kick":
-        # Low-frequency thump: two lowpass passes for steeper rolloff
-        processed = [_lowpass_iir(_lowpass_iir(ch, 110, sr), 110, sr) for ch in channels]
-
-    elif stem_id == "snare":
-        # Snare body (150-800 Hz) + attack transient/snap (2-6 kHz), summed
+        # 60-400 Hz bandpass captures the kick fundamental + shell resonance.
+        # Two lowpass passes for steeper high-end rolloff, then single highpass.
         processed = []
         for ch in channels:
-            body  = _bandpass_iir(ch, 150, 800, sr)
-            snap  = _bandpass_iir(ch, 2000, 6000, sr)
-            combined = [body[i] * 0.7 + snap[i] * 0.5 for i in range(len(ch))]
+            lp1 = _lowpass_iir(ch,   400, sr)
+            lp2 = _lowpass_iir(lp1,  400, sr)   # 2nd pass → -12 dB/oct above 400 Hz
+            result = _highpass_iir(lp2, 60, sr)  # remove sub-rumble below 60 Hz
+            processed.append(result)
+
+    elif stem_id == "snare":
+        # Body: 200-900 Hz (raised low-cut to avoid kick leakage at 150-200 Hz).
+        # Snap: 2.5-7 kHz for the crack/attack of the snare hit.
+        processed = []
+        for ch in channels:
+            body = _bandpass_iir(ch, 200, 900, sr)
+            snap = _bandpass_iir(ch, 2500, 7000, sr)
+            combined = [body[i] * 0.6 + snap[i] * 0.4 for i in range(len(ch))]
             processed.append(combined)
 
     elif stem_id == "toms":
-        # Tom body: 60-400 Hz
-        processed = [_bandpass_iir(ch, 60, 400, sr) for ch in channels]
+        # Toms: 80-350 Hz — slightly tighter than kick to focus on the shell.
+        processed = [_bandpass_iir(ch, 80, 350, sr) for ch in channels]
 
     elif stem_id == "cymbals":
-        # Cymbals: above 5 kHz (hi-hats, crashes, rides)
+        # Cymbals: highpass above 5 kHz → hi-hats, rides, crashes.
         processed = [_highpass_iir(ch, 5000, sr) for ch in channels]
 
     else:
@@ -219,6 +229,7 @@ def _extract_drum_component(stem_id: str, drums_wav: str,
     dst = os.path.join(output_dir, f"{display_name}.wav")
     _write_wav_pure(dst, processed, sr)
     return dst
+
 
 
 # ──────────────────────────────────────────────────────────────────
