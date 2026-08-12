@@ -285,7 +285,7 @@ def separate_with_demucs(input_file: str, output_dir: str,
     Runs Demucs as a child process: python -m demucs ...
     Avoids all Python import-chain issues. Streams stderr for progress.
     """
-    six_stem = {"guitar_acoustic", "guitar_electric", "piano", "guitar"}
+    six_stem = {"guitar", "piano"}
     needs_6s = any(s in six_stem for s in requested_stems)
     model    = "htdemucs_6s" if needs_6s else "htdemucs"
 
@@ -462,15 +462,12 @@ def separate_fallback(input_file: str, output_dir: str,
         "lead_vocal":      lambda ch: bandpass(ch, 300,  3500),
         "backing_vocals":  lambda ch: bandpass(ch, 250,  3800),
         "vocal_fx":        lambda ch: scale(bandpass(ch, 1000, 8000), 0.6),
-        "noise":           lambda ch: scale(highpass(ch, 8000), 0.5),
         "drums":           lambda ch: highpass(ch, 100),
-        "kick":            lambda ch: lowpass(ch, 120),
-        "snare":           lambda ch: bandpass(ch, 150,  500),
-        "toms":            lambda ch: bandpass(ch, 80,   400),
+        "kick":            lambda ch: bandpass(ch, 60,   400),
+        "snare":           lambda ch: bandpass(ch, 200,  900),
         "cymbals":         lambda ch: highpass(ch, 5000),
         "bass":            lambda ch: lowpass(ch, 250),
-        "guitar_acoustic": lambda ch: bandpass(ch, 80,   5000),
-        "guitar_electric": lambda ch: bandpass(ch, 100,  6000),
+        "guitar":          lambda ch: bandpass(ch, 80,   6000),
         "piano":           lambda ch: bandpass(ch, 30,   4200),
         "other":           lambda ch: bandpass(ch, 500,  3000),
     }

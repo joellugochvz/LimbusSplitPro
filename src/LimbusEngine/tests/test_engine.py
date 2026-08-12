@@ -102,7 +102,7 @@ class TestFallbackSeparation(unittest.TestCase):
 
 
 class TestStemCoverage(unittest.TestCase):
-    """Verify all 15 stem IDs are handled without errors."""
+    """Verify all 13 stem IDs are handled without errors."""
 
     def setUp(self):
         self.wav = "_test_stems.wav"
@@ -117,10 +117,14 @@ class TestStemCoverage(unittest.TestCase):
 
     def test_all_stem_ids_handled(self):
         from separator import separate_fallback
+        # Current stem list after merges:
+        #   - noise removed (was identical to 'other')
+        #   - toms removed (merged into 'kick' as 'Bombo y Toms')
+        #   - guitar_acoustic + guitar_electric merged into 'guitar'
         all_stems = [
             "vocals", "lead_vocal", "backing_vocals", "vocal_fx",
-            "noise", "drums", "kick", "snare", "toms", "cymbals",
-            "bass", "guitar_acoustic", "guitar_electric", "piano", "other"
+            "drums", "kick", "snare", "cymbals",
+            "bass", "guitar", "piano", "other"
         ]
         results = separate_fallback(self.wav, self.out, all_stems, "CPU", callback=None)
         self.assertEqual(len(results), len(all_stems),
