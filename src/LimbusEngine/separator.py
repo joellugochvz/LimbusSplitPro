@@ -24,14 +24,12 @@ STEM_DISPLAY_NAMES = {
     "lead_vocal":      "Voz_Principal",
     "backing_vocals":  "Coros_y_Segundas",
     "vocal_fx":        "Efectos_Vocales",
-    "noise":           "Ruido",
     "drums":           "Bateria_Completa",
     "kick":            "Bombo_y_Toms",
     "snare":           "Caja",
     "cymbals":         "Platos",
     "bass":            "Bajo",
-    "guitar_acoustic": "Guitarra_Acustica",
-    "guitar_electric": "Guitarra_Electrica",
+    "guitar":          "Guitarra",
     "piano":           "Piano_y_Teclados",
     "other":           "Other",
 }
@@ -41,17 +39,15 @@ STEM_DISPLAY_NAMES = {
 # htdemucs (4s)  produces: vocals, drums, bass, other
 STEM_TO_DEMUCS = {
     "vocals":          "vocals",
-    "lead_vocal":      "vocals",
-    "backing_vocals":  "vocals",
-    "vocal_fx":        "vocals",
-    "noise":           "other",
+    "lead_vocal":      "vocals",    # ↳ 2nd-pass Mid/Side extraction
+    "backing_vocals":  "vocals",    # ↳ 2nd-pass Mid/Side extraction
+    "vocal_fx":        "vocals",    # ↳ 2nd-pass high-freq air extraction
     "drums":           "drums",
-    "kick":            "drums",
-    "snare":           "drums",
-    "cymbals":         "drums",
+    "kick":            "drums",     # ↳ 2nd-pass IIR bandpass
+    "snare":           "drums",     # ↳ 2nd-pass IIR bandpass
+    "cymbals":         "drums",     # ↳ 2nd-pass IIR highpass
     "bass":            "bass",
-    "guitar_acoustic": "guitar",
-    "guitar_electric": "guitar",
+    "guitar":          "guitar",
     "piano":           "piano",
     "other":           "other",
 }
@@ -175,7 +171,59 @@ def _bandpass_iir(sig: list, lo: float, hi: float, sr: int) -> list:
     return _highpass_iir(_lowpass_iir(sig, hi, sr), lo, sr)
 
 
-def _extract_drum_component(stem_id: str, drums_wav: str,
+def _extract_vocal_component(stem_id: str, vocals_wav: str,
+                              output_dir: str, display_name: str) -> str:
+    """
+    2nd-pass vocal separation using Mid/Side matrix decomposition.
+
+    The AI-isolated vocals stem still carries stereo information:
+      Mid  = (L + R) / 2  → centre-panned signal  = lead vocal
+                             (producers always centre the main voice)
+      Side = (L - R) / 2  → panned/doubled signal  = backing vocals / harmonies
+                             (duplications, harmonies and reverb tails are
+                              typically panned off-centre)
+
+    vocal_fx: M/S is not meaningful for reverb, so we keep the full stereo
+    vocal stem but apply a mild high-frequency emphasis (2–8 kHz) to bring
+    out the air, sibilance and reverb tail that sits in the upper mids.
+    """
+    channels, sr = _read_wav_pure(vocals_wav)
+
+    # Ensure we have stereo; if mono, duplicate channel
+    if len(channels) == 1:
+        channels = [channels[0], channels[0]]
+    L, R = channels[0], channels[1]
+
+    if stem_id == "lead_vocal":
+        # Mid channel: centred content = lead vocal
+        mid = [(L[i] + R[i]) * 0.5 for i in range(len(L))]
+        processed = [mid, mid]   # output as mono-ish stereo
+
+    elif stem_id == "backing_vocals":
+        # Side channel: panned content = harmonies, doubles, chorus voices
+        side = [(L[i] - R[i]) * 0.5 for i in range(len(L))]
+        processed = [side, side]
+
+    elif stem_id == "vocal_fx":
+        # Full stereo vocal with high-freq emphasis: keeps reverb/air (2–8 kHz)
+        # while de-emphasising the dry centre vocal (already in lead_vocal)
+        processed = []
+        for ch in channels:
+            hi  = _bandpass_iir(ch, 2000, 8000, sr)   # air / reverb tail
+            dry = _lowpass_iir(ch, 2000, sr)           # dry fundamental
+            # blend: more air, less dry  → feels like the ambience/reverb
+            blend = [hi[i] * 0.7 + dry[i] * 0.3 for i in range(len(ch))]
+            processed.append(blend)
+
+    else:
+        return ""
+
+    dst = os.path.join(output_dir, f"{display_name}.wav")
+    _write_wav_pure(dst, processed, sr)
+    return dst
+
+
+
                              output_dir: str, display_name: str) -> str:
     """
     2nd-pass drum separation.
@@ -320,10 +368,9 @@ def separate_with_demucs(input_file: str, output_dir: str,
         generated  = {}
         copied_map = {}  # demucs_stem → dest path (avoid duplicates)
 
-        # Which drum sub-components did the user request?
-        DRUM_COMPONENTS = {"kick", "snare", "cymbals"}
-        requested_drum_components = [s for s in requested_stems if s in DRUM_COMPONENTS]
-        needs_drum_split = len(requested_drum_components) > 0
+        # Which components need 2nd-pass processing on their parent stem?
+        DRUM_COMPONENTS  = {"kick", "snare", "cymbals"}
+        VOCAL_COMPONENTS = {"lead_vocal", "backing_vocals", "vocal_fx"}
 
         total = len(requested_stems)
         for idx, stem_id in enumerate(requested_stems):
@@ -331,10 +378,19 @@ def separate_with_demucs(input_file: str, output_dir: str,
             display = STEM_DISPLAY_NAMES.get(stem_id, stem_id)
             _report(callback, pct, f"Exportando {display}…", model, device)
 
-            # Drum sub-components: apply 2nd-pass IIR on the isolated drums stem
+            # Drum sub-components: 2nd-pass IIR filtering on isolated drums stem
             if stem_id in DRUM_COMPONENTS and "drums" in available:
                 dst = _extract_drum_component(
                     stem_id, available["drums"], output_dir, display
+                )
+                if dst:
+                    generated[stem_id] = dst
+                continue
+
+            # Vocal sub-components: 2nd-pass Mid/Side extraction on isolated vocals stem
+            if stem_id in VOCAL_COMPONENTS and "vocals" in available:
+                dst = _extract_vocal_component(
+                    stem_id, available["vocals"], output_dir, display
                 )
                 if dst:
                     generated[stem_id] = dst
