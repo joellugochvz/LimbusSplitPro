@@ -29,7 +29,7 @@ public partial class MainViewModel : ObservableObject
     private string _outputFolderPath = string.Empty;
 
     [ObservableProperty]
-    private string _selectedDevice = "Auto";
+    private string _selectedDevice = "CPU (Procesamiento Seguro)";
 
     [ObservableProperty]
     private ObservableCollection<string> _availableDevices = new() { "Auto (CPU / GPU)", "CPU (Procesamiento Seguro)", "GPU (DirectML / CUDA)" };

@@ -53,9 +53,8 @@ public class StemCategory : INotifyPropertyChanged
 
             // Drums group
             new StemCategory { Id = "drums", DisplayName = "Batería Completa", Description = "Set de percusión completo", Group = StemGroup.Drums, IsSelected = true, IconKey = "Drum", DefaultColorHex = "#2ECC71" },
-            new StemCategory { Id = "kick", DisplayName = "Bombo", Description = "Kick drum de frecuencia baja", Group = StemGroup.Drums, IsSelected = false, IsSubStem = true, ParentCategoryKey = "drums", IconKey = "Circle", DefaultColorHex = "#27AE60" },
+            new StemCategory { Id = "kick", DisplayName = "Bombo y Toms", Description = "Percusión baja: bombo, toms y golpes de frecuencia grave", Group = StemGroup.Drums, IsSelected = false, IsSubStem = true, ParentCategoryKey = "drums", IconKey = "Circle", DefaultColorHex = "#27AE60" },
             new StemCategory { Id = "snare", DisplayName = "Caja", Description = "Snare drum y golpeteos metálicos", Group = StemGroup.Drums, IsSelected = false, IsSubStem = true, ParentCategoryKey = "drums", IconKey = "Square", DefaultColorHex = "#1ABC9C" },
-            new StemCategory { Id = "toms", DisplayName = "Toms", Description = "Tom-toms y rototoms", Group = StemGroup.Drums, IsSelected = false, IsSubStem = true, ParentCategoryKey = "drums", IconKey = "Layers", DefaultColorHex = "#16A085" },
             new StemCategory { Id = "cymbals", DisplayName = "Platos y Hi-Hats", Description = "Címbalos, crash, ride y hi-hats", Group = StemGroup.Drums, IsSelected = false, IsSubStem = true, ParentCategoryKey = "drums", IconKey = "Star", DefaultColorHex = "#3498DB" },
 
             // Bass group

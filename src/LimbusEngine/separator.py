@@ -26,9 +26,8 @@ STEM_DISPLAY_NAMES = {
     "vocal_fx":        "Efectos_Vocales",
     "noise":           "Ruido",
     "drums":           "Bateria_Completa",
-    "kick":            "Bombo",
+    "kick":            "Bombo_y_Toms",
     "snare":           "Caja",
-    "toms":            "Toms",
     "cymbals":         "Platos",
     "bass":            "Bajo",
     "guitar_acoustic": "Guitarra_Acustica",
@@ -49,7 +48,6 @@ STEM_TO_DEMUCS = {
     "drums":           "drums",
     "kick":            "drums",
     "snare":           "drums",
-    "toms":            "drums",
     "cymbals":         "drums",
     "bass":            "bass",
     "guitar_acoustic": "guitar",
@@ -196,12 +194,13 @@ def _extract_drum_component(stem_id: str, drums_wav: str,
     channels, sr = _read_wav_pure(drums_wav)
 
     if stem_id == "kick":
-        # 60-400 Hz bandpass captures the kick fundamental + shell resonance.
-        # Two lowpass passes for steeper high-end rolloff, then single highpass.
+        # 60-400 Hz bandpass: captures kick drum fundamental + toms resonance.
+        # Both instruments share this frequency range — unified stem.
+        # Double lowpass for steeper rolloff above 400 Hz (-12 dB/oct).
         processed = []
         for ch in channels:
             lp1 = _lowpass_iir(ch,   400, sr)
-            lp2 = _lowpass_iir(lp1,  400, sr)   # 2nd pass → -12 dB/oct above 400 Hz
+            lp2 = _lowpass_iir(lp1,  400, sr)   # 2nd pass → steeper hi rolloff
             result = _highpass_iir(lp2, 60, sr)  # remove sub-rumble below 60 Hz
             processed.append(result)
 
@@ -214,10 +213,6 @@ def _extract_drum_component(stem_id: str, drums_wav: str,
             snap = _bandpass_iir(ch, 2500, 7000, sr)
             combined = [body[i] * 0.6 + snap[i] * 0.4 for i in range(len(ch))]
             processed.append(combined)
-
-    elif stem_id == "toms":
-        # Toms: 80-350 Hz — slightly tighter than kick to focus on the shell.
-        processed = [_bandpass_iir(ch, 80, 350, sr) for ch in channels]
 
     elif stem_id == "cymbals":
         # Cymbals: highpass above 5 kHz → hi-hats, rides, crashes.
@@ -326,7 +321,7 @@ def separate_with_demucs(input_file: str, output_dir: str,
         copied_map = {}  # demucs_stem → dest path (avoid duplicates)
 
         # Which drum sub-components did the user request?
-        DRUM_COMPONENTS = {"kick", "snare", "toms", "cymbals"}
+        DRUM_COMPONENTS = {"kick", "snare", "cymbals"}
         requested_drum_components = [s for s in requested_stems if s in DRUM_COMPONENTS]
         needs_drum_split = len(requested_drum_components) > 0
 
