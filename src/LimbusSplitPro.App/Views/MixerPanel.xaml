@@ -127,36 +127,38 @@
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border x:Name="pb" Background="#00F0FF" CornerRadius="6">
-                                        <Viewbox Width="11" Height="11" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <!-- PLAY: triangle -->
-                                            <Path Fill="#0A0A0F" Width="10" Height="10"
-                                                  Data="M 0,0 L 10,5 L 0,10 Z">
-                                                <Path.Style>
-                                                    <Style TargetType="Path">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Path.Style>
-                                            </Path>
-                                            <!-- PAUSE: two bars as single Path, no container -->
-                                            <Path Fill="#0A0A0F" Width="10" Height="10"
-                                                  Data="M 0,0 H 3 V 10 H 0 Z M 5,0 H 8 V 10 H 5 Z">
-                                                <Path.Style>
-                                                    <Style TargetType="Path">
-                                                        <Setter Property="Visibility" Value="Collapsed" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                            <Viewbox Width="11" Height="11" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Grid Width="10" Height="10">
+                                                    <!-- PLAY: triangle -->
+                                                    <Path Fill="#0A0A0F"
+                                                          Data="M 0,0 L 10,5 L 0,10 Z">
+                                                        <Path.Style>
+                                                            <Style TargetType="Path">
                                                                 <Setter Property="Visibility" Value="Visible" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Path.Style>
-                                            </Path>
-                                        </Viewbox>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Path.Style>
+                                                    </Path>
+                                                    <!-- PAUSE: two bars as single Path geometry -->
+                                                    <Path Fill="#0A0A0F"
+                                                          Data="M 0,0 H 3 V 10 H 0 Z M 5,0 H 8 V 10 H 5 Z">
+                                                        <Path.Style>
+                                                            <Style TargetType="Path">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Path.Style>
+                                                    </Path>
+                                                </Grid>
+                                            </Viewbox>
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
