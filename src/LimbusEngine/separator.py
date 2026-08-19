@@ -13,6 +13,7 @@ import struct
 import subprocess
 import tempfile
 import wave
+import aifc
 
 
 # ──────────────────────────────────────────────────────────────────
@@ -64,22 +65,45 @@ def _report(callback, pct: float, stage: str, model: str = "Demucs", device: str
 
 
 # ──────────────────────────────────────────────────────────────────
-# WAV helpers (pure stdlib — no numpy)
+# Audio I/O helpers (pure stdlib — no numpy)
+# Supports WAV (PCM 16-bit, little-endian) and
+#           AIF/AIFF (PCM 16-bit, big-endian via stdlib aifc)
 # ──────────────────────────────────────────────────────────────────
 
 def _read_wav_pure(file_path: str):
-    with wave.open(file_path, 'rb') as wf:
-        n_ch = wf.getnchannels()
-        sw   = wf.getsampwidth()
-        sr   = wf.getframerate()
-        nf   = wf.getnframes()
-        raw  = wf.readframes(nf)
-        if sw != 2:
-            raise ValueError("Solo WAV PCM 16-bit en modo fallback.")
-        unpacked = struct.unpack(f"<{nf * n_ch}h", raw)
-        samples  = [x / 32768.0 for x in unpacked]
-        channels = [samples[ch::n_ch] for ch in range(n_ch)]
-    return channels, sr
+    """
+    Read a WAV or AIF/AIFF file and return (channels, sample_rate).
+    channels = list of lists of float samples in [-1.0, 1.0] per channel.
+    Supports PCM 16-bit only (sufficient for all Demucs 2nd-pass operations).
+    """
+    ext = os.path.splitext(file_path)[1].lower()
+    if ext in (".aif", ".aiff"):
+        with aifc.open(file_path, 'rb') as af:
+            n_ch = af.getnchannels()
+            sw   = af.getsampwidth()
+            sr   = af.getframerate()
+            nf   = af.getnframes()
+            raw  = af.readframes(nf)
+            if sw != 2:
+                raise ValueError("Solo AIF/AIFF PCM 16-bit soportado en modo fallback.")
+            # AIFF is big-endian
+            unpacked = struct.unpack(f">{nf * n_ch}h", raw)
+            samples  = [x / 32768.0 for x in unpacked]
+            channels = [samples[ch::n_ch] for ch in range(n_ch)]
+        return channels, sr
+    else:
+        with wave.open(file_path, 'rb') as wf:
+            n_ch = wf.getnchannels()
+            sw   = wf.getsampwidth()
+            sr   = wf.getframerate()
+            nf   = wf.getnframes()
+            raw  = wf.readframes(nf)
+            if sw != 2:
+                raise ValueError("Solo WAV PCM 16-bit soportado en modo fallback.")
+            unpacked = struct.unpack(f"<{nf * n_ch}h", raw)
+            samples  = [x / 32768.0 for x in unpacked]
+            channels = [samples[ch::n_ch] for ch in range(n_ch)]
+        return channels, sr
 
 
 def _write_wav_pure(file_path: str, channels, sr: int):
@@ -428,9 +452,9 @@ def separate_fallback(input_file: str, output_dir: str,
     _report(callback, 5.0, "Modo demo (sin Demucs) — separación por frecuencias…",
             "Heurístico", device)
 
-    if not input_file.lower().endswith(".wav"):
+    if not input_file.lower().endswith((".wav", ".aif", ".aiff")):
         raise RuntimeError(
-            "El modo demo solo admite archivos WAV. "
+            "El modo demo solo admite WAV o AIF/AIFF. "
             "Para separación real instala Demucs: pip install numpy demucs"
         )
 

@@ -21,7 +21,7 @@
                     <StackPanel HorizontalAlignment="Center">
                         <TextBlock Text="🎵" FontSize="28" HorizontalAlignment="Center" Margin="0,0,0,8" />
                         <TextBlock Text="Suelta aquí tu mezcla" Foreground="White" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,4" />
-                        <TextBlock Text="WAV, MP3 o FLAC" Foreground="#6B7280" FontSize="11" HorizontalAlignment="Center" Margin="0,0,0,12" />
+                        <TextBlock Text="WAV, MP3, FLAC o AIF" Foreground="#6B7280" FontSize="11" HorizontalAlignment="Center" Margin="0,0,0,12" />
                         <Button Content="Elegir archivo" Style="{StaticResource FluentSecondaryButtonStyle}" Click="OnSelectInputFileClick" HorizontalAlignment="Center" Padding="16,8" />
                     </StackPanel>
                 </Border>

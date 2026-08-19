@@ -19,7 +19,7 @@ public partial class ControlPanel : UserControl
         var dialog = new OpenFileDialog
         {
             Title = "Seleccionar Canción para Separar — Limbus Split Pro",
-            Filter = "Archivos de Audio (*.wav;*.mp3;*.flac;*.m4a)|*.wav;*.mp3;*.flac;*.m4a|Todos los archivos (*.*)|*.*"
+            Filter = "Archivos de Audio (*.wav;*.mp3;*.flac;*.m4a;*.aif;*.aiff)|*.wav;*.mp3;*.flac;*.m4a;*.aif;*.aiff|Todos los archivos (*.*)|*.*"
         };
 
         if (dialog.ShowDialog() == true && DataContext is MainViewModel vm)
