@@ -205,15 +205,11 @@ def _extract_vocal_component(stem_id: str, vocals_wav: str,
         processed = [side, side]
 
     elif stem_id == "vocal_fx":
-        # Full stereo vocal with high-freq emphasis: keeps reverb/air (2–8 kHz)
-        # while de-emphasising the dry centre vocal (already in lead_vocal)
-        processed = []
-        for ch in channels:
-            hi  = _bandpass_iir(ch, 2000, 8000, sr)   # air / reverb tail
-            dry = _lowpass_iir(ch, 2000, sr)           # dry fundamental
-            # blend: more air, less dry  → feels like the ambience/reverb
-            blend = [hi[i] * 0.7 + dry[i] * 0.3 for i in range(len(ch))]
-            processed.append(blend)
+        # Highpass above 4 kHz: captures only the reverb shimmer, air and
+        # sibilance that live above the dry vocal body (80-4000 Hz).
+        # The dry fundamental is already in lead_vocal (Mid) and
+        # backing_vocals (Side) — keeping it here caused bleeding.
+        processed = [_highpass_iir(ch, 4000, sr) for ch in channels]
 
     else:
         return ""
