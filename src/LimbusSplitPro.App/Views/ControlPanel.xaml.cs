@@ -41,6 +41,19 @@ public partial class ControlPanel : UserControl
         }
     }
 
+    private void OnLoadProjectClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFolderDialog
+        {
+            Title = "Cargar Proyecto — Selecciona la carpeta con los stems WAV"
+        };
+
+        if (dialog.ShowDialog() == true && DataContext is MainViewModel vm)
+        {
+            vm.LoadStemsFromFolder(dialog.FolderName);
+        }
+    }
+
     private void OnDropZoneDrop(object sender, DragEventArgs e)
     {
         if (e.Data.GetDataPresent(DataFormats.FileDrop))

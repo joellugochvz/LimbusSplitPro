@@ -29,7 +29,8 @@
                     </Style>
                 </StackPanel.Style>
                 <TextBlock Text="🎚" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,16" Opacity="0.3" />
-                <TextBlock Text="Los WAV aparecerán aquí al terminar." Foreground="#6B7280" FontSize="14" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="300" Margin="0,0,0,12" />
+                <TextBlock Text="Los WAV aparecerán aquí al terminar." Foreground="#6B7280" FontSize="14" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="300" Margin="0,0,0,6" />
+                <TextBlock Text="Usa 'Cargar proyecto existente' para reabrir una separación anterior." Foreground="#4B5563" FontSize="11" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="280" />
             </StackPanel>
 
             <!-- ═══════════════════════════════════════════ -->

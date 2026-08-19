@@ -111,6 +111,73 @@ public partial class MainViewModel : ObservableObject
         SeparationStateText = "Canción lista. Configura las pistas y presiona Split.";
     }
 
+    /// <summary>
+    /// Scans a folder for WAV files and loads them into the mixer as if they
+    /// were freshly separated stems. Matches filenames against known stem IDs
+    /// so colours/icons are preserved. Unknown WAVs are loaded as generic tracks.
+    /// </summary>
+    public void LoadStemsFromFolder(string folderPath)
+    {
+        if (!Directory.Exists(folderPath)) return;
+
+        var wavFiles = Directory.GetFiles(folderPath, "*.wav", SearchOption.TopDirectoryOnly);
+        if (wavFiles.Length == 0)
+        {
+            StatusMessage = "No se encontraron archivos WAV en la carpeta seleccionada.";
+            return;
+        }
+
+        // Build a lookup: normalised key → StemCategory
+        var categoryLookup = StemSelection.Categories
+            .ToDictionary(
+                c => Normalise(c.DisplayName),
+                c => c,
+                StringComparer.OrdinalIgnoreCase);
+
+        // Also allow matching by Id (e.g. "vocals.wav", "kick.wav")
+        var idLookup = StemSelection.Categories
+            .ToDictionary(
+                c => c.Id,
+                c => c,
+                StringComparer.OrdinalIgnoreCase);
+
+        var generatedFiles = new Dictionary<string, string>();
+
+        foreach (var file in wavFiles.OrderBy(f => f))
+        {
+            string rawName = Path.GetFileNameWithoutExtension(file);
+            string normName = Normalise(rawName);
+
+            // Try match by display name first, then by stem Id, then use filename as-is
+            StemCategory? matched = null;
+            if (categoryLookup.TryGetValue(normName, out var byDisplay))
+                matched = byDisplay;
+            else if (idLookup.TryGetValue(rawName, out var byId))
+                matched = byId;
+            else
+            {
+                // Partial match: check if any category display name is contained in the filename
+                matched = StemSelection.Categories
+                    .FirstOrDefault(c => normName.Contains(Normalise(c.DisplayName), StringComparison.OrdinalIgnoreCase)
+                                      || normName.Contains(c.Id, StringComparison.OrdinalIgnoreCase));
+            }
+
+            string trackId = matched?.Id ?? rawName.ToLowerInvariant().Replace(' ', '_');
+            generatedFiles[trackId] = file;
+        }
+
+        _audioEngine.Stop();
+        LoadGeneratedTracksIntoMixer(generatedFiles);
+
+        OutputFolderPath = folderPath;
+        StatusMessage = $"{wavFiles.Length} pista(s) cargadas desde: {Path.GetFileName(folderPath)}";
+        SeparationStateText = "Proyecto cargado desde carpeta.";
+        CurrentStageText = "✅ Proyecto cargado";
+    }
+
+    private static string Normalise(string s) =>
+        s.Replace("_", " ").Replace("-", " ").Trim();
+
     [RelayCommand]
     private async Task StartSeparation()
     {
