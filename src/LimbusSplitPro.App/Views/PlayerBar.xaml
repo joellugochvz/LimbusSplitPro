@@ -18,7 +18,67 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Slider Grid.Column="0" Minimum="0" Maximum="{Binding TotalDurationSeconds, FallbackValue=100}" Value="{Binding SeekSliderValue, Mode=TwoWay}" ValueChanged="OnSeekValueChanged" VerticalAlignment="Center" Margin="0,0,14,0" />
+                <!-- Seek Slider: custom dark/neon template -->
+                <Slider Grid.Column="0"
+                        Minimum="0" Maximum="{Binding TotalDurationSeconds, FallbackValue=100}"
+                        Value="{Binding SeekSliderValue, Mode=TwoWay}"
+                        ValueChanged="OnSeekValueChanged"
+                        VerticalAlignment="Center" Margin="0,0,14,0"
+                        IsMoveToPointEnabled="True"
+                        Cursor="Hand">
+                    <Slider.Template>
+                        <ControlTemplate TargetType="Slider">
+                            <Grid Height="20" VerticalAlignment="Center">
+                                <!-- Track background -->
+                                <Border Height="4" CornerRadius="2"
+                                        Background="#1E2230"
+                                        VerticalAlignment="Center"/>
+                                <!-- Native Track (handles hit-testing and thumb position) -->
+                                <Track x:Name="PART_Track">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Command="Slider.DecreaseLarge" Opacity="0" Background="Transparent" BorderThickness="0" Focusable="False"/>
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Command="Slider.IncreaseLarge" Opacity="0" Background="Transparent" BorderThickness="0" Focusable="False"/>
+                                    </Track.IncreaseRepeatButton>
+                                    <Track.Thumb>
+                                        <Thumb>
+                                            <Thumb.Template>
+                                                <ControlTemplate TargetType="Thumb">
+                                                    <Grid>
+                                                        <Ellipse x:Name="ThumbCircle"
+                                                                 Width="14" Height="14"
+                                                                 Fill="#00F0FF"
+                                                                 Stroke="#0A0A0F" StrokeThickness="1.5"/>
+                                                    </Grid>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="ThumbCircle" Property="Effect">
+                                                                <Setter.Value>
+                                                                    <DropShadowEffect Color="#00F0FF" BlurRadius="12" ShadowDepth="0" Opacity="0.9"/>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                            <Setter TargetName="ThumbCircle" Property="Width" Value="16"/>
+                                                            <Setter TargetName="ThumbCircle" Property="Height" Value="16"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsDragging" Value="True">
+                                                            <Setter TargetName="ThumbCircle" Property="Fill" Value="#33F3FF"/>
+                                                            <Setter TargetName="ThumbCircle" Property="Effect">
+                                                                <Setter.Value>
+                                                                    <DropShadowEffect Color="#00F0FF" BlurRadius="18" ShadowDepth="0" Opacity="1.0"/>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Thumb.Template>
+                                        </Thumb>
+                                    </Track.Thumb>
+                                </Track>
+                            </Grid>
+                        </ControlTemplate>
+                    </Slider.Template>
+                </Slider>
                 <TextBlock Grid.Column="1" Text="{Binding FormattedTimeText}" Foreground="#6B7280" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" FontFamily="Consolas" />
             </Grid>
 

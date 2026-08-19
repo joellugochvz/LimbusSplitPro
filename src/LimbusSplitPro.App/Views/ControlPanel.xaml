@@ -173,10 +173,35 @@
                     </Button.Template>
                 </Button>
 
-                <!-- Cancel link (visible during processing) -->
-                <Button Content="Cancelar proceso" Command="{Binding CancelSeparationCommand}" HorizontalAlignment="Center" Margin="0,10,0,0"
-                        Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}"
-                        Foreground="#EF4444" Background="Transparent" BorderThickness="0" FontSize="12" Cursor="Hand" />
+                <!-- Cancel Button (visible during processing) -->
+                <Button Command="{Binding CancelSeparationCommand}" Height="38" Cursor="Hand" Margin="0,10,0,0"
+                        Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="cancelBorder" CornerRadius="10" BorderThickness="1.5" Padding="16,0"
+                                    BorderBrush="#EF4444" Background="#1A0808">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="✕" FontSize="11" FontWeight="Bold" Foreground="#EF4444" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Cancelar proceso" FontSize="13" FontWeight="SemiBold" Foreground="#EF4444" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="cancelBorder" Property="Background" Value="#2A0D0D"/>
+                                    <Setter TargetName="cancelBorder" Property="Effect">
+                                        <Setter.Value>
+                                            <DropShadowEffect Color="#EF4444" BlurRadius="16" ShadowDepth="0" Opacity="0.45"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="cancelBorder" Property="Background" Value="#3D1212"/>
+                                    <Setter TargetName="cancelBorder" Property="BorderBrush" Value="#FF6B6B"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
 
             </StackPanel>
         </ScrollViewer>

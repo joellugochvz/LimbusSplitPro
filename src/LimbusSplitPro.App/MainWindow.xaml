@@ -42,10 +42,6 @@
 
                 <!-- Right: Controls -->
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
-                    <!-- Badge -->
-                    <Border Background="#1A1A24" BorderBrush="#00E5FF" BorderThickness="1" CornerRadius="4" Padding="8,2" Margin="0,0,20,0" VerticalAlignment="Center" Height="24">
-                        <TextBlock Text="🔒 PROCESAMIENTO LOCAL" Foreground="#00E5FF" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    </Border>
 
                     <!-- Window Buttons -->
                     <Button Click="OnMinimizeClick" Width="46" Background="Transparent" BorderThickness="0" Foreground="White" FontSize="14" Content="─">
