@@ -174,10 +174,32 @@
                     <TextBlock Text="{Binding StatusMessage}" Foreground="#6B7280" FontSize="10" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
 
-                <!-- Export & Folder Buttons -->
+                <!-- Export & Load Buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Abrir proyecto: loads existing stems folder into mixer -->
+                    <Button Click="OnLoadProjectClick" Padding="12,6" Margin="0,0,6,0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="loadBorder" Background="#0E1017" CornerRadius="8"
+                                        BorderBrush="#2A3040" BorderThickness="1.5"
+                                        Padding="{TemplateBinding Padding}">
+                                    <TextBlock Text="📂 Abrir proyecto" FontSize="11" Foreground="#A0A5B1" FontWeight="SemiBold" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="loadBorder" Property="BorderBrush" Value="#00F0FF" />
+                                        <Setter TargetName="loadBorder" Property="Background" Value="#0D1C24" />
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="loadBorder" Property="Background" Value="#0A1520" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
                     <!-- Exportar Mezcla: Cyan styled -->
-                    <Button Command="{Binding ExportMixCommand}" Padding="12,6" Margin="0,0,6,0" Cursor="Hand">
+                    <Button Command="{Binding ExportMixCommand}" Padding="12,6" Cursor="Hand">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="exportBorder" Background="#0A1A1F" CornerRadius="8" BorderBrush="#00F0FF" BorderThickness="1.5" Padding="{TemplateBinding Padding}">
@@ -196,8 +218,6 @@
                             </ControlTemplate>
                         </Button.Template>
                     </Button>
-
-                    <Button Content="📁 Abrir Carpeta" Style="{StaticResource FluentSecondaryButtonStyle}" Command="{Binding OpenOutputFolderCommand}" Padding="10,6" FontSize="11" />
                 </StackPanel>
             </Grid>
         </Grid>

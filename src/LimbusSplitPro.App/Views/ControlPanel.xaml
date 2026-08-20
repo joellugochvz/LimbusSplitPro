@@ -19,7 +19,7 @@
                         AllowDrop="True" Drop="OnDropZoneDrop" DragOver="OnDropZoneDragOver"
                         Visibility="{Binding SelectedInputFilePath, Converter={StaticResource StringEmptyToVisibilityConverter}}">
                     <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="🎵" FontSize="28" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                        <TextBlock Text="🎵" FontSize="28" HorizontalAlignment="Center" Margin="0,0,0,8" Foreground="#00F0FF" />
                         <TextBlock Text="Suelta aquí tu mezcla" Foreground="White" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,4" />
                         <TextBlock Text="WAV, MP3, FLAC o AIF" Foreground="#6B7280" FontSize="11" HorizontalAlignment="Center" Margin="0,0,0,12" />
                         <Button Content="Elegir archivo" Style="{StaticResource FluentSecondaryButtonStyle}" Click="OnSelectInputFileClick" HorizontalAlignment="Center" Padding="16,8" />
@@ -36,7 +36,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0" Width="32" Height="32" CornerRadius="8" Background="#1A1D26" Margin="0,0,10,0">
-                            <TextBlock Text="🎵" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <TextBlock Text="🎵" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#00F0FF" />
                         </Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="{Binding InputFileInfo.FileName}" Foreground="White" FontWeight="SemiBold" FontSize="12" TextTrimming="CharacterEllipsis" />
@@ -125,7 +125,7 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="📁" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBlock Grid.Column="0" Text="📁" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#00F0FF" />
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="Pistas separar" Foreground="White" FontSize="12" FontWeight="SemiBold" />
                             <TextBlock Text="{Binding OutputFolderPath}" Foreground="#6B7280" FontSize="10" TextTrimming="CharacterEllipsis" />
@@ -133,31 +133,6 @@
                         <Button Grid.Column="2" Content="Cambiar" Style="{StaticResource FluentSecondaryButtonStyle}" Click="OnSelectFolderClick" Padding="10,6" FontSize="11" VerticalAlignment="Center" />
                     </Grid>
                 </Border>
-
-                <!-- Load project button: reopen a previously separated stems folder -->
-                <Button Click="OnLoadProjectClick" Height="36" Cursor="Hand" Margin="0,0,0,20">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="loadBorder" CornerRadius="9" BorderThickness="1" Padding="14,0"
-                                    BorderBrush="#2A3040" Background="#0E1017">
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <TextBlock Text="📂" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="Cargar proyecto existente" FontSize="12" FontWeight="SemiBold"
-                                               Foreground="#A0A5B1" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="loadBorder" Property="BorderBrush" Value="#00F0FF"/>
-                                    <Setter TargetName="loadBorder" Property="Background" Value="#0D1C24"/>
-                                </Trigger>
-                                <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="loadBorder" Property="Background" Value="#0A1520"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Button.Template>
-                </Button>
 
                 <!-- ═════════════════════════════════════════════ -->
                 <!-- Section 04 · ACELERACIÓN HARDWARE -->

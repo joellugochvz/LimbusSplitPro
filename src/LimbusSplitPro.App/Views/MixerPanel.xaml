@@ -130,11 +130,6 @@
                         <TextBlock Text="RESULTADO" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,4" />
                         <TextBlock Text="La exportación está preparada." Foreground="White" FontSize="20" FontWeight="Bold" />
                     </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                        <!-- Open Folder button -->
-                        <Button Content="📁 Abrir carpeta" Style="{StaticResource FluentSecondaryButtonStyle}"
-                                Command="{Binding OpenOutputFolderCommand}" Padding="10,6" FontSize="11" />
-                    </StackPanel>
                 </Grid>
 
                 <!-- Info + Transport Bar -->
@@ -227,39 +222,49 @@
                     <ItemsControl ItemsSource="{Binding MixerTracks}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border x:Name="trackCard" Background="#12141A" CornerRadius="10" Padding="12" Margin="0,0,0,6"
-                                        BorderBrush="#1E2230" BorderThickness="1">
+                                <!-- Track card with subtle color tint overlay -->
+                                <Border x:Name="trackCard" CornerRadius="10" Margin="0,0,0,6"
+                                        BorderBrush="#1E2230" BorderThickness="1"
+                                        ClipToBounds="True">
                                     <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="130" />
-                                        </Grid.ColumnDefinitions>
+                                        <!-- Dark base layer -->
+                                        <Border Background="#0D0F14" CornerRadius="9" />
+                                        <!-- Colour tint layer (7% opacity of stem colour) -->
+                                        <Border Background="{Binding ColorHex, Converter={StaticResource HexColorToBrushConverter}}"
+                                                Opacity="0.07" CornerRadius="9" />
+                                        <!-- Content layer -->
+                                        <Grid Margin="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="130" />
+                                            </Grid.ColumnDefinitions>
 
-                                        <!-- Color badge -->
-                                        <Border Grid.Column="0" Width="32" Height="32" CornerRadius="8" Margin="0,0,10,0"
-                                                Background="{Binding ColorHex, Converter={StaticResource HexColorToBrushConverter}}">
-                                            <TextBlock Text="🎵" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
+                                            <!-- Color badge -->
+                                            <Border Grid.Column="0" Width="32" Height="32" CornerRadius="8" Margin="0,0,10,0"
+                                                    Background="{Binding ColorHex, Converter={StaticResource HexColorToBrushConverter}}">
+                                                <TextBlock Text="🎵" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" />
+                                            </Border>
 
-                                        <!-- Track name + format -->
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding DisplayName}" Foreground="White" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" />
-                                            <TextBlock Foreground="#6B7280" FontSize="10">
-                                                <Run Text="WAV  ·  " />
-                                                <Run Text="{Binding Volume, StringFormat='{}{0:P0}'}" />
-                                            </TextBlock>
-                                        </StackPanel>
+                                            <!-- Track name + format -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding DisplayName}" Foreground="White" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Foreground="#6B7280" FontSize="10">
+                                                    <Run Text="WAV  ·  " />
+                                                    <Run Text="{Binding Volume, StringFormat='{}{0:P0}'}" />
+                                                </TextBlock>
+                                            </StackPanel>
 
-                                        <!-- Mute / Solo -->
-                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
-                                            <ToggleButton Style="{StaticResource MuteButtonStyle}" IsChecked="{Binding IsMuted}" Margin="0,0,4,0" />
-                                            <ToggleButton Style="{StaticResource SoloButtonStyle}" IsChecked="{Binding IsSolo}" />
-                                        </StackPanel>
+                                            <!-- Mute / Solo -->
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
+                                                <ToggleButton Style="{StaticResource MuteButtonStyle}" IsChecked="{Binding IsMuted}" Margin="0,0,4,0" />
+                                                <ToggleButton Style="{StaticResource SoloButtonStyle}" IsChecked="{Binding IsSolo}" />
+                                            </StackPanel>
 
-                                        <!-- Volume slider -->
-                                        <Slider Grid.Column="3" Minimum="0.0" Maximum="1.5" Value="{Binding Volume}" VerticalAlignment="Center" />
+                                            <!-- Volume slider -->
+                                            <Slider Grid.Column="3" Minimum="0.0" Maximum="1.5" Value="{Binding Volume}" VerticalAlignment="Center" />
+                                        </Grid>
                                     </Grid>
                                 </Border>
                                 <DataTemplate.Triggers>

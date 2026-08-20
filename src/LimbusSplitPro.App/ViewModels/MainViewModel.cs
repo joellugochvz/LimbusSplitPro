@@ -167,7 +167,18 @@ public partial class MainViewModel : ObservableObject
         }
 
         _audioEngine.Stop();
-        LoadGeneratedTracksIntoMixer(generatedFiles);
+
+        // Sort by the same order as StemSelection.Categories ("Qué extraer" section).
+        // Unmatched generic tracks (index = -1) go at the end.
+        var categoryOrder = StemSelection.Categories
+            .Select((c, i) => new { c.Id, Index = i })
+            .ToDictionary(x => x.Id, x => x.Index, StringComparer.OrdinalIgnoreCase);
+
+        var orderedFiles = generatedFiles
+            .OrderBy(kvp => categoryOrder.TryGetValue(kvp.Key, out int idx) ? idx : int.MaxValue)
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+        LoadGeneratedTracksIntoMixer(orderedFiles);
 
         OutputFolderPath = folderPath;
         StatusMessage = $"{wavFiles.Length} pista(s) cargadas desde: {Path.GetFileName(folderPath)}";
@@ -278,7 +289,15 @@ public partial class MainViewModel : ObservableObject
 
         var trackStates = new List<TrackState>();
 
-        foreach (var kvp in generatedFiles)
+        // Always iterate in the order defined in StemSelection.Categories ("Qué extraer")
+        var categoryOrder = StemSelection.Categories
+            .Select((c, i) => new { c.Id, Index = i })
+            .ToDictionary(x => x.Id, x => x.Index, StringComparer.OrdinalIgnoreCase);
+
+        var orderedKvps = generatedFiles
+            .OrderBy(kvp => categoryOrder.TryGetValue(kvp.Key, out int idx) ? idx : int.MaxValue);
+
+        foreach (var kvp in orderedKvps)
         {
             string stemId = kvp.Key;
             string filePath = kvp.Value;
