@@ -148,7 +148,6 @@ public partial class MainViewModel : ObservableObject
             string rawName = Path.GetFileNameWithoutExtension(file);
             string normName = Normalise(rawName);
 
-            // Try match by display name first, then by stem Id, then use filename as-is
             StemCategory? matched = null;
             if (categoryLookup.TryGetValue(normName, out var byDisplay))
                 matched = byDisplay;
@@ -156,34 +155,43 @@ public partial class MainViewModel : ObservableObject
                 matched = byId;
             else
             {
-                // Partial match: check if any category display name is contained in the filename
                 matched = StemSelection.Categories
                     .FirstOrDefault(c => normName.Contains(Normalise(c.DisplayName), StringComparison.OrdinalIgnoreCase)
                                       || normName.Contains(c.Id, StringComparison.OrdinalIgnoreCase));
             }
 
             string trackId = matched?.Id ?? rawName.ToLowerInvariant().Replace(' ', '_');
-            generatedFiles[trackId] = file;
+            // Avoid duplicate track IDs if two files resolve to the same stem
+            if (!generatedFiles.ContainsKey(trackId))
+                generatedFiles[trackId] = file;
         }
 
-        _audioEngine.Stop();
+        try
+        {
+            _audioEngine.Stop();
 
-        // Sort by the same order as StemSelection.Categories ("Qué extraer" section).
-        // Unmatched generic tracks (index = -1) go at the end.
-        var categoryOrder = StemSelection.Categories
-            .Select((c, i) => new { c.Id, Index = i })
-            .ToDictionary(x => x.Id, x => x.Index, StringComparer.OrdinalIgnoreCase);
+            // Sort by StemSelection.Categories order ("Qué extraer")
+            var categoryOrder = StemSelection.Categories
+                .Select((c, i) => new { c.Id, Index = i })
+                .ToDictionary(x => x.Id, x => x.Index, StringComparer.OrdinalIgnoreCase);
 
-        var orderedFiles = generatedFiles
-            .OrderBy(kvp => categoryOrder.TryGetValue(kvp.Key, out int idx) ? idx : int.MaxValue)
-            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            var orderedFiles = generatedFiles
+                .OrderBy(kvp => categoryOrder.TryGetValue(kvp.Key, out int idx) ? idx : int.MaxValue)
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
-        LoadGeneratedTracksIntoMixer(orderedFiles);
+            LoadGeneratedTracksIntoMixer(orderedFiles);
 
-        OutputFolderPath = folderPath;
-        StatusMessage = $"{wavFiles.Length} pista(s) cargadas desde: {Path.GetFileName(folderPath)}";
-        SeparationStateText = "Proyecto cargado desde carpeta.";
-        CurrentStageText = "✅ Proyecto cargado";
+            OutputFolderPath = folderPath;
+            StatusMessage = $"{wavFiles.Length} pista(s) cargadas desde: {Path.GetFileName(folderPath)}";
+            SeparationStateText = "Proyecto cargado desde carpeta.";
+            CurrentStageText = "✅ Proyecto cargado";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error al cargar el proyecto: {ex.Message}";
+            SeparationStateText = "Error al cargar proyecto.";
+            CurrentStageText = "❌ Error al cargar";
+        }
     }
 
     private static string Normalise(string s) =>

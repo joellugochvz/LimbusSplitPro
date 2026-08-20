@@ -32,58 +32,72 @@ public class MultitrackAudioEngine : IAudioEngine
 
     public void LoadTracks(IEnumerable<TrackState> tracks)
     {
-        Stop();
-        ClearTracks();
-
-        _trackStates.AddRange(tracks);
-
-        if (_trackStates.Count == 0) return;
-
-        WaveFormat? masterFormat = null;
-        TimeSpan maxDuration = TimeSpan.Zero;
-
-        foreach (var track in _trackStates)
+        try
         {
-            if (!File.Exists(track.FilePath)) continue;
+            Stop();
+            ClearTracks();
 
-            var reader = new AudioFileReader(track.FilePath);
-            _trackReaders.Add(reader);
+            _trackStates.AddRange(tracks);
 
-            if (reader.TotalTime > maxDuration)
+            if (_trackStates.Count == 0) return;
+
+            WaveFormat? masterFormat = null;
+            TimeSpan maxDuration = TimeSpan.Zero;
+
+            foreach (var track in _trackStates)
             {
-                maxDuration = reader.TotalTime;
+                if (!File.Exists(track.FilePath)) continue;
+
+                var reader = new AudioFileReader(track.FilePath);
+                _trackReaders.Add(reader);
+
+                if (reader.TotalTime > maxDuration)
+                    maxDuration = reader.TotalTime;
+
+                masterFormat ??= reader.WaveFormat;
+
+                var trackProvider = new TrackSampleProvider(track.TrackId, reader);
+                trackProvider.SetVolume(track.Volume);
+                trackProvider.SetMute(track.IsMuted);
+                _trackProviders[track.TrackId] = trackProvider;
             }
 
-            if (masterFormat == null)
+            if (masterFormat == null || _trackProviders.Count == 0) return;
+
+            // Resample all providers to the master format so the mixer
+            // doesn't throw when tracks have different sample rates.
+            _mixer = new MixingSampleProvider(masterFormat);
+            _mixer.ReadFully = true;
+
+            foreach (var provider in _trackProviders.Values)
             {
-                masterFormat = reader.WaveFormat;
+                // Wrap in resampler if sample rate differs from master
+                ISampleProvider input = provider.WaveFormat.SampleRate != masterFormat.SampleRate
+                    ? new WdlResamplingSampleProvider(provider, masterFormat.SampleRate)
+                    : (ISampleProvider)provider;
+                _mixer.AddMixerInput(input);
             }
 
-            var trackProvider = new TrackSampleProvider(track.TrackId, reader);
-            trackProvider.SetVolume(track.Volume);
-            trackProvider.SetMute(track.IsMuted);
-            _trackProviders[track.TrackId] = trackProvider;
+            _masterProvider = new MasterMixSampleProvider(_mixer);
+
+            // Dispose old WASAPI device before creating a new one
+            _wasapiOut?.Stop();
+            _wasapiOut?.Dispose();
+            _wasapiOut = new WasapiOut(AudioClientShareMode.Shared, 50);
+            _wasapiOut.Init(_masterProvider);
+
+            CurrentState.TotalDuration = maxDuration;
+            CurrentState.CurrentTime = TimeSpan.Zero;
+            CurrentState.Status = PlaybackStatus.Stopped;
+
+            PlaybackStateChanged?.Invoke(this, CurrentState);
         }
-
-        if (masterFormat == null || _trackProviders.Count == 0) return;
-
-        _mixer = new MixingSampleProvider(masterFormat);
-        _mixer.ReadFully = true;
-
-        foreach (var provider in _trackProviders.Values)
+        catch (Exception ex)
         {
-            _mixer.AddMixerInput(provider);
+            // Surface as an InvalidOperationException so callers can show a friendly message
+            throw new InvalidOperationException(
+                $"No se pudo inicializar el motor de audio: {ex.Message}", ex);
         }
-
-        _masterProvider = new MasterMixSampleProvider(_mixer);
-        _wasapiOut = new WasapiOut(AudioClientShareMode.Shared, 50);
-        _wasapiOut.Init(_masterProvider);
-
-        CurrentState.TotalDuration = maxDuration;
-        CurrentState.CurrentTime = TimeSpan.Zero;
-        CurrentState.Status = PlaybackStatus.Stopped;
-
-        PlaybackStateChanged?.Invoke(this, CurrentState);
     }
 
     private void OnTimerTick()
@@ -228,9 +242,15 @@ public class MultitrackAudioEngine : IAudioEngine
 
     private void ClearTracks()
     {
+        // Dispose WASAPI device FIRST to release the audio endpoint
+        // before disposing the readers it depends on
+        try { _wasapiOut?.Stop(); } catch { /* ignore */ }
+        try { _wasapiOut?.Dispose(); } catch { /* ignore */ }
+        _wasapiOut = null;
+
         foreach (var reader in _trackReaders)
         {
-            reader.Dispose();
+            try { reader.Dispose(); } catch { /* ignore */ }
         }
         _trackReaders.Clear();
         _trackProviders.Clear();
