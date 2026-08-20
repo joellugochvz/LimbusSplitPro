@@ -28,7 +28,7 @@ STEM_DISPLAY_NAMES = {
     "drums":           "Bateria_Completa",
     "kick":            "Bombo_y_Toms",
     "snare":           "Caja",
-    "cymbals":         "Platos",
+    "cymbals":         "Platos_y_HI-hats",
     "bass":            "Bajo",
     "guitar":          "Guitarra",
     "piano":           "Piano_y_Teclados",
