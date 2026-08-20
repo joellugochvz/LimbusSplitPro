@@ -1,5 +1,4 @@
 using System.IO;
-using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using LimbusSplitPro.Core.Interfaces;
@@ -9,7 +8,7 @@ namespace LimbusSplitPro.App.Audio;
 
 public class MultitrackAudioEngine : IAudioEngine
 {
-    private WasapiOut? _wasapiOut;
+    private IWavePlayer? _waveOut;
     private MixingSampleProvider? _mixer;
     private MasterMixSampleProvider? _masterProvider;
     private readonly List<AudioFileReader> _trackReaders = new();
@@ -32,22 +31,22 @@ public class MultitrackAudioEngine : IAudioEngine
 
     public void LoadTracks(IEnumerable<TrackState> tracks)
     {
-        try
+        Stop();
+        ClearTracks();
+
+        _trackStates.AddRange(tracks);
+
+        if (_trackStates.Count == 0) return;
+
+        WaveFormat? masterFormat = null;
+        TimeSpan maxDuration = TimeSpan.Zero;
+
+        foreach (var track in _trackStates)
         {
-            Stop();
-            ClearTracks();
+            if (!File.Exists(track.FilePath)) continue;
 
-            _trackStates.AddRange(tracks);
-
-            if (_trackStates.Count == 0) return;
-
-            WaveFormat? masterFormat = null;
-            TimeSpan maxDuration = TimeSpan.Zero;
-
-            foreach (var track in _trackStates)
+            try
             {
-                if (!File.Exists(track.FilePath)) continue;
-
                 var reader = new AudioFileReader(track.FilePath);
                 _trackReaders.Add(reader);
 
@@ -61,43 +60,60 @@ public class MultitrackAudioEngine : IAudioEngine
                 trackProvider.SetMute(track.IsMuted);
                 _trackProviders[track.TrackId] = trackProvider;
             }
-
-            if (masterFormat == null || _trackProviders.Count == 0) return;
-
-            // Resample all providers to the master format so the mixer
-            // doesn't throw when tracks have different sample rates.
-            _mixer = new MixingSampleProvider(masterFormat);
-            _mixer.ReadFully = true;
-
-            foreach (var provider in _trackProviders.Values)
+            catch
             {
-                // Wrap in resampler if sample rate differs from master
-                ISampleProvider input = provider.WaveFormat.SampleRate != masterFormat.SampleRate
-                    ? new WdlResamplingSampleProvider(provider, masterFormat.SampleRate)
-                    : (ISampleProvider)provider;
-                _mixer.AddMixerInput(input);
+                // Skip unreadable files without crashing
             }
-
-            _masterProvider = new MasterMixSampleProvider(_mixer);
-
-            // Dispose old WASAPI device before creating a new one
-            _wasapiOut?.Stop();
-            _wasapiOut?.Dispose();
-            _wasapiOut = new WasapiOut(AudioClientShareMode.Shared, 50);
-            _wasapiOut.Init(_masterProvider);
-
-            CurrentState.TotalDuration = maxDuration;
-            CurrentState.CurrentTime = TimeSpan.Zero;
-            CurrentState.Status = PlaybackStatus.Stopped;
-
-            PlaybackStateChanged?.Invoke(this, CurrentState);
         }
-        catch (Exception ex)
+
+        if (masterFormat == null || _trackProviders.Count == 0) return;
+
+        // Normalise everything to the master format (first track's format).
+        // Use a standard output format: same sample rate, stereo, 32-bit float
+        var outputFormat = WaveFormat.CreateIeeeFloatWaveFormat(
+            masterFormat.SampleRate, Math.Max(masterFormat.Channels, 2));
+
+        _mixer = new MixingSampleProvider(outputFormat);
+        _mixer.ReadFully = true;
+
+        foreach (var provider in _trackProviders.Values)
         {
-            // Surface as an InvalidOperationException so callers can show a friendly message
-            throw new InvalidOperationException(
-                $"No se pudo inicializar el motor de audio: {ex.Message}", ex);
+            ISampleProvider input = provider;
+
+            // Convert mono to stereo if needed
+            if (input.WaveFormat.Channels == 1 && outputFormat.Channels == 2)
+                input = new MonoToStereoSampleProvider(input);
+
+            // Resample if sample rate differs
+            if (input.WaveFormat.SampleRate != outputFormat.SampleRate)
+                input = new WdlResamplingSampleProvider(input, outputFormat.SampleRate);
+
+            _mixer.AddMixerInput(input);
         }
+
+        _masterProvider = new MasterMixSampleProvider(_mixer);
+
+        try
+        {
+            _waveOut = new WaveOutEvent
+            {
+                DesiredLatency = 150,
+                NumberOfBuffers = 3
+            };
+            _waveOut.Init(_masterProvider);
+        }
+        catch
+        {
+            // Audio device unavailable — tracks are loaded in the UI
+            // but playback won't work until device is available
+            _waveOut = null;
+        }
+
+        CurrentState.TotalDuration = maxDuration;
+        CurrentState.CurrentTime = TimeSpan.Zero;
+        CurrentState.Status = PlaybackStatus.Stopped;
+
+        PlaybackStateChanged?.Invoke(this, CurrentState);
     }
 
     private void OnTimerTick()
@@ -124,9 +140,9 @@ public class MultitrackAudioEngine : IAudioEngine
 
     public void Play()
     {
-        if (_wasapiOut != null && _trackReaders.Count > 0)
+        if (_waveOut != null && _trackReaders.Count > 0)
         {
-            _wasapiOut.Play();
+            _waveOut.Play();
             CurrentState.Status = PlaybackStatus.Playing;
             _positionTimer.Start();
             PlaybackStateChanged?.Invoke(this, CurrentState);
@@ -135,9 +151,9 @@ public class MultitrackAudioEngine : IAudioEngine
 
     public void Pause()
     {
-        if (_wasapiOut != null)
+        if (_waveOut != null)
         {
-            _wasapiOut.Pause();
+            _waveOut.Pause();
             _positionTimer.Stop();
             CurrentState.Status = PlaybackStatus.Paused;
             PlaybackStateChanged?.Invoke(this, CurrentState);
@@ -147,9 +163,9 @@ public class MultitrackAudioEngine : IAudioEngine
     public void Stop()
     {
         _positionTimer.Stop();
-        if (_wasapiOut != null)
+        if (_waveOut != null)
         {
-            _wasapiOut.Stop();
+            try { _waveOut.Stop(); } catch { /* ignore */ }
         }
 
         foreach (var reader in _trackReaders)
@@ -232,21 +248,20 @@ public class MultitrackAudioEngine : IAudioEngine
 
     public List<string> GetAvailableDevices()
     {
-        return new List<string> { "Dispositivo Predeterminado de Windows (WASAPI Compartido)" };
+        return new List<string> { "Dispositivo Predeterminado de Windows" };
     }
 
     public void SetAudioDevice(string deviceName)
     {
-        // Re-initialize WASAPI device if changed
+        // Re-initialize audio device if changed
     }
 
     private void ClearTracks()
     {
-        // Dispose WASAPI device FIRST to release the audio endpoint
-        // before disposing the readers it depends on
-        try { _wasapiOut?.Stop(); } catch { /* ignore */ }
-        try { _wasapiOut?.Dispose(); } catch { /* ignore */ }
-        _wasapiOut = null;
+        // Dispose audio device FIRST to release the endpoint
+        try { _waveOut?.Stop(); } catch { /* ignore */ }
+        try { _waveOut?.Dispose(); } catch { /* ignore */ }
+        _waveOut = null;
 
         foreach (var reader in _trackReaders)
         {
@@ -260,7 +275,6 @@ public class MultitrackAudioEngine : IAudioEngine
     public void Dispose()
     {
         _positionTimer.Dispose();
-        _wasapiOut?.Dispose();
         ClearTracks();
     }
 
