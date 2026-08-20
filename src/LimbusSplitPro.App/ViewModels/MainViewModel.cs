@@ -111,50 +111,57 @@ public partial class MainViewModel : ObservableObject
         SeparationStateText = "Canción lista. Configura las pistas y presiona Split.";
     }
 
-    private static readonly Dictionary<string, string> ExportedNameToStemIdMap = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, string> ExportedNameToStemIdMap = CreateExportedStemMap();
+
+    private static Dictionary<string, string> CreateExportedStemMap()
     {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        void Add(string key, string val) => map[key] = val;
+
         // Vocals
-        { "Voces", "vocals" },
-        { "Voces (General)", "vocals" },
-        { "Voces_General", "vocals" },
-        { "Voz_Principal", "lead_vocal" },
-        { "Voz Principal", "lead_vocal" },
-        { "Coros_y_Segundas", "backing_vocals" },
-        { "Coros y Segundas", "backing_vocals" },
-        { "Coros y Segundas Voces", "backing_vocals" },
-        { "Efectos_Vocales", "vocal_fx" },
-        { "Efectos Vocales", "vocal_fx" },
-        { "Efectos Vocales / Reverb", "vocal_fx" },
-        { "Efectos_Vocales_Reverb", "vocal_fx" },
+        Add("Voces", "vocals");
+        Add("Voces (General)", "vocals");
+        Add("Voces_General", "vocals");
+        Add("Voz_Principal", "lead_vocal");
+        Add("Voz Principal", "lead_vocal");
+        Add("Coros_y_Segundas", "backing_vocals");
+        Add("Coros y Segundas", "backing_vocals");
+        Add("Coros y Segundas Voces", "backing_vocals");
+        Add("Efectos_Vocales", "vocal_fx");
+        Add("Efectos Vocales", "vocal_fx");
+        Add("Efectos Vocales / Reverb", "vocal_fx");
+        Add("Efectos_Vocales_Reverb", "vocal_fx");
 
         // Drums
-        { "Bateria_Completa", "drums" },
-        { "Bateria Completa", "drums" },
-        { "Batería Completa", "drums" },
-        { "Batería_Completa", "drums" },
-        { "Bombo_y_Toms", "kick" },
-        { "Bombo y Toms", "kick" },
-        { "Caja", "snare" },
-        { "Platos", "cymbals" },
-        { "Platos_y_HI-hats", "cymbals" },
-        { "Platos y HI-hats", "cymbals" },
-        { "Platos y Hi-Hats", "cymbals" },
+        Add("Bateria_Completa", "drums");
+        Add("Bateria Completa", "drums");
+        Add("Batería Completa", "drums");
+        Add("Batería_Completa", "drums");
+        Add("Bombo_y_Toms", "kick");
+        Add("Bombo y Toms", "kick");
+        Add("Caja", "snare");
+        Add("Platos", "cymbals");
+        Add("Platos_y_HI-hats", "cymbals");
+        Add("Platos y HI-hats", "cymbals");
+        Add("Platos y Hi-Hats", "cymbals");
 
         // Bass
-        { "Bajo", "bass" },
+        Add("Bajo", "bass");
 
         // Guitar
-        { "Guitarra", "guitar" },
+        Add("Guitarra", "guitar");
 
         // Piano
-        { "Piano_y_Teclados", "piano" },
-        { "Piano y Teclados", "piano" },
+        Add("Piano_y_Teclados", "piano");
+        Add("Piano y Teclados", "piano");
 
         // Other
-        { "Other", "other" },
-        { "Other (Residual)", "other" },
-        { "Other_Residual", "other" },
-    };
+        Add("Other", "other");
+        Add("Other (Residual)", "other");
+        Add("Other_Residual", "other");
+
+        return map;
+    }
 
     /// <summary>
     /// Scans a folder for WAV files and loads them into the mixer as if they
