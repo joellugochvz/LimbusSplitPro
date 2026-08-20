@@ -330,9 +330,9 @@
                     <Grid Height="20" VerticalAlignment="Center">
                         <Border Height="4" Background="{TemplateBinding Background}" CornerRadius="2" VerticalAlignment="Center" Margin="5,0"/>
                         <ProgressBar Height="4" Margin="5,0"
-                                     Minimum="{TemplateBinding Minimum}"
-                                     Maximum="{TemplateBinding Maximum}"
-                                     Value="{TemplateBinding Value}"
+                                     Minimum="{Binding Minimum, RelativeSource={RelativeSource TemplatedParent}}"
+                                     Maximum="{Binding Maximum, RelativeSource={RelativeSource TemplatedParent}}"
+                                     Value="{Binding Value, RelativeSource={RelativeSource TemplatedParent}}"
                                      Foreground="#008C99"
                                      Background="Transparent"
                                      BorderThickness="0"

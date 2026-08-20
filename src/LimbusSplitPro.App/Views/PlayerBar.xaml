@@ -35,9 +35,9 @@
                                         VerticalAlignment="Center"/>
                                 <!-- Track fill (progress trail behind thumb) -->
                                 <ProgressBar Height="4"
-                                             Minimum="{TemplateBinding Minimum}"
-                                             Maximum="{TemplateBinding Maximum}"
-                                             Value="{TemplateBinding Value}"
+                                             Minimum="{Binding Minimum, RelativeSource={RelativeSource TemplatedParent}}"
+                                             Maximum="{Binding Maximum, RelativeSource={RelativeSource TemplatedParent}}"
+                                             Value="{Binding Value, RelativeSource={RelativeSource TemplatedParent}}"
                                              Foreground="#008C99"
                                              Background="Transparent"
                                              BorderThickness="0"
