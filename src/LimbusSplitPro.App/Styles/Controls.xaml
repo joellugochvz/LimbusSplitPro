@@ -320,35 +320,6 @@
         </Setter>
     </Style>
 
-    <!-- Slider RepeatButton Styles -->
-    <Style x:Key="SliderDecreaseRepeatButtonStyle" TargetType="RepeatButton">
-        <Setter Property="OverridesDefaultStyle" Value="True"/>
-        <Setter Property="Background" Value="#008C99"/>
-        <Setter Property="Focusable" Value="False"/>
-        <Setter Property="IsTabStop" Value="False"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="RepeatButton">
-                    <Border Height="4" CornerRadius="2,0,0,2" Background="{TemplateBinding Background}" VerticalAlignment="Center"/>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="SliderIncreaseRepeatButtonStyle" TargetType="RepeatButton">
-        <Setter Property="OverridesDefaultStyle" Value="True"/>
-        <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Focusable" Value="False"/>
-        <Setter Property="IsTabStop" Value="False"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="RepeatButton">
-                    <Border Height="4" Background="Transparent" VerticalAlignment="Center"/>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
     <!-- 8. DarkSliderStyle -->
     <Style x:Key="DarkSliderStyle" TargetType="Slider">
         <Setter Property="Background" Value="#2A2E39"/>
@@ -356,11 +327,20 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Slider">
-                    <Grid Height="20">
+                    <Grid Height="20" VerticalAlignment="Center">
                         <Border Height="4" Background="{TemplateBinding Background}" CornerRadius="2" VerticalAlignment="Center" Margin="5,0"/>
+                        <ProgressBar Height="4" Margin="5,0"
+                                     Minimum="{TemplateBinding Minimum}"
+                                     Maximum="{TemplateBinding Maximum}"
+                                     Value="{TemplateBinding Value}"
+                                     Foreground="#008C99"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     VerticalAlignment="Center"
+                                     IsHitTestVisible="False"/>
                         <Track x:Name="PART_Track">
                             <Track.DecreaseRepeatButton>
-                                <RepeatButton Command="Slider.DecreaseLarge" Style="{StaticResource SliderDecreaseRepeatButtonStyle}"/>
+                                <RepeatButton Command="Slider.DecreaseLarge" Opacity="0"/>
                             </Track.DecreaseRepeatButton>
                             <Track.Thumb>
                                 <Thumb>
@@ -376,7 +356,7 @@
                                 </Thumb>
                             </Track.Thumb>
                             <Track.IncreaseRepeatButton>
-                                <RepeatButton Command="Slider.IncreaseLarge" Style="{StaticResource SliderIncreaseRepeatButtonStyle}"/>
+                                <RepeatButton Command="Slider.IncreaseLarge" Opacity="0"/>
                             </Track.IncreaseRepeatButton>
                         </Track>
                     </Grid>

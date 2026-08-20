@@ -29,18 +29,28 @@
                     <Slider.Template>
                         <ControlTemplate TargetType="Slider">
                             <Grid Height="20" VerticalAlignment="Center">
-                                <!-- Track background -->
+                                 <!-- Track background -->
                                 <Border Height="4" CornerRadius="2"
                                         Background="#1E2230"
                                         VerticalAlignment="Center"/>
+                                <!-- Track fill (progress trail behind thumb) -->
+                                <ProgressBar Height="4"
+                                             Minimum="{TemplateBinding Minimum}"
+                                             Maximum="{TemplateBinding Maximum}"
+                                             Value="{TemplateBinding Value}"
+                                             Foreground="#008C99"
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             VerticalAlignment="Center"
+                                             IsHitTestVisible="False"/>
                                 <!-- Native Track (handles hit-testing and thumb position) -->
-                                 <Track x:Name="PART_Track">
-                                     <Track.DecreaseRepeatButton>
-                                         <RepeatButton Command="Slider.DecreaseLarge" Style="{StaticResource SliderDecreaseRepeatButtonStyle}" />
-                                     </Track.DecreaseRepeatButton>
-                                     <Track.IncreaseRepeatButton>
-                                         <RepeatButton Command="Slider.IncreaseLarge" Style="{StaticResource SliderIncreaseRepeatButtonStyle}" />
-                                     </Track.IncreaseRepeatButton>
+                                <Track x:Name="PART_Track">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Command="Slider.DecreaseLarge" Opacity="0" Background="Transparent" BorderThickness="0" Focusable="False"/>
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Command="Slider.IncreaseLarge" Opacity="0" Background="Transparent" BorderThickness="0" Focusable="False"/>
+                                    </Track.IncreaseRepeatButton>
                                     <Track.Thumb>
                                         <Thumb>
                                             <Thumb.Template>
