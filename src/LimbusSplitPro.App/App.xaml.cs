@@ -9,6 +9,8 @@ namespace LimbusSplitPro.App;
 
 public partial class App : Application
 {
+    private static bool _isShowingError = false;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -25,8 +27,8 @@ public partial class App : Application
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
+        e.Handled = true;
         LogAndShowException(e.Exception, "UI Thread Error");
-        e.Handled = true; // Prevent process from crashing silently
     }
 
     private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -39,12 +41,19 @@ public partial class App : Application
 
     private void OnUnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
     {
-        LogAndShowException(e.Exception, "Task Error");
         e.SetObserved();
+        if (e.Exception != null)
+        {
+            LogAndShowException(e.Exception, "Task Error");
+        }
     }
 
     private static void LogAndShowException(Exception ex, string type)
     {
+        // Reentrancy guard to prevent infinite error dialog loops
+        if (_isShowingError) return;
+        _isShowingError = true;
+
         try
         {
             string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "limbus_crash.log");
@@ -65,11 +74,12 @@ public partial class App : Application
         }
         catch
         {
-            MessageBox.Show(
-                $"Error crítico al iniciar la aplicación:\n\n{ex.Message}",
-                "Error en Limbus Split Pro",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            // Ignore logging failures
+        }
+        finally
+        {
+            // Terminate process cleanly so WPF dispatcher doesn't loop on broken UI state
+            Environment.Exit(1);
         }
     }
 }
