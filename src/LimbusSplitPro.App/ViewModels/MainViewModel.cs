@@ -111,6 +111,51 @@ public partial class MainViewModel : ObservableObject
         SeparationStateText = "Canción lista. Configura las pistas y presiona Split.";
     }
 
+    private static readonly Dictionary<string, string> ExportedNameToStemIdMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        // Vocals
+        { "Voces", "vocals" },
+        { "Voces (General)", "vocals" },
+        { "Voces_General", "vocals" },
+        { "Voz_Principal", "lead_vocal" },
+        { "Voz Principal", "lead_vocal" },
+        { "Coros_y_Segundas", "backing_vocals" },
+        { "Coros y Segundas", "backing_vocals" },
+        { "Coros y Segundas Voces", "backing_vocals" },
+        { "Efectos_Vocales", "vocal_fx" },
+        { "Efectos Vocales", "vocal_fx" },
+        { "Efectos Vocales / Reverb", "vocal_fx" },
+        { "Efectos_Vocales_Reverb", "vocal_fx" },
+
+        // Drums
+        { "Bateria_Completa", "drums" },
+        { "Bateria Completa", "drums" },
+        { "Batería Completa", "drums" },
+        { "Batería_Completa", "drums" },
+        { "Bombo_y_Toms", "kick" },
+        { "Bombo y Toms", "kick" },
+        { "Caja", "snare" },
+        { "Platos", "cymbals" },
+        { "Platos_y_HI-hats", "cymbals" },
+        { "Platos y HI-hats", "cymbals" },
+        { "Platos y Hi-Hats", "cymbals" },
+
+        // Bass
+        { "Bajo", "bass" },
+
+        // Guitar
+        { "Guitarra", "guitar" },
+
+        // Piano
+        { "Piano_y_Teclados", "piano" },
+        { "Piano y Teclados", "piano" },
+
+        // Other
+        { "Other", "other" },
+        { "Other (Residual)", "other" },
+        { "Other_Residual", "other" },
+    };
+
     /// <summary>
     /// Scans a folder for WAV files and loads them into the mixer as if they
     /// were freshly separated stems. Matches filenames against known stem IDs
@@ -127,14 +172,12 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        // Build a lookup: normalised key → StemCategory
         var categoryLookup = StemSelection.Categories
             .ToDictionary(
                 c => Normalise(c.DisplayName),
                 c => c,
                 StringComparer.OrdinalIgnoreCase);
 
-        // Also allow matching by Id (e.g. "vocals.wav", "kick.wav")
         var idLookup = StemSelection.Categories
             .ToDictionary(
                 c => c.Id,
@@ -149,19 +192,30 @@ public partial class MainViewModel : ObservableObject
             string normName = Normalise(rawName);
 
             StemCategory? matched = null;
-            if (categoryLookup.TryGetValue(normName, out var byDisplay))
-                matched = byDisplay;
-            else if (idLookup.TryGetValue(rawName, out var byId))
-                matched = byId;
-            else
+
+            // 1. Direct lookup in exported filenames map
+            if (ExportedNameToStemIdMap.TryGetValue(rawName, out var mappedId) ||
+                ExportedNameToStemIdMap.TryGetValue(normName, out mappedId))
             {
-                matched = StemSelection.Categories
-                    .FirstOrDefault(c => normName.Contains(Normalise(c.DisplayName), StringComparison.OrdinalIgnoreCase)
-                                      || normName.Contains(c.Id, StringComparison.OrdinalIgnoreCase));
+                matched = StemSelection.Categories.FirstOrDefault(c => c.Id.Equals(mappedId, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 2. Direct lookup by category Id
+            matched ??= idLookup.GetValueOrDefault(rawName) ?? idLookup.GetValueOrDefault(normName);
+
+            // 3. Direct lookup by DisplayName
+            matched ??= categoryLookup.GetValueOrDefault(normName);
+
+            // 4. Fuzzy match: match key prefixes / sub-strings
+            if (matched == null)
+            {
+                matched = StemSelection.Categories.FirstOrDefault(c =>
+                    normName.StartsWith(Normalise(c.DisplayName), StringComparison.OrdinalIgnoreCase) ||
+                    Normalise(c.DisplayName).StartsWith(normName, StringComparison.OrdinalIgnoreCase) ||
+                    normName.Contains(c.Id, StringComparison.OrdinalIgnoreCase));
             }
 
             string trackId = matched?.Id ?? rawName.ToLowerInvariant().Replace(' ', '_');
-            // Avoid duplicate track IDs if two files resolve to the same stem
             if (!generatedFiles.ContainsKey(trackId))
                 generatedFiles[trackId] = file;
         }
