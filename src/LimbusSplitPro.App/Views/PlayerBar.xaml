@@ -36,10 +36,22 @@
                                 <!-- Native Track (handles hit-testing and thumb position) -->
                                 <Track x:Name="PART_Track">
                                     <Track.DecreaseRepeatButton>
-                                        <RepeatButton Command="Slider.DecreaseLarge" Opacity="0" Background="Transparent" BorderThickness="0" Focusable="False"/>
+                                        <RepeatButton Command="Slider.DecreaseLarge" Focusable="False" IsTabStop="False">
+                                            <RepeatButton.Template>
+                                                <ControlTemplate TargetType="RepeatButton">
+                                                    <Border Height="4" CornerRadius="2,0,0,2" Background="#008C99" />
+                                                </ControlTemplate>
+                                            </RepeatButton.Template>
+                                        </RepeatButton>
                                     </Track.DecreaseRepeatButton>
                                     <Track.IncreaseRepeatButton>
-                                        <RepeatButton Command="Slider.IncreaseLarge" Opacity="0" Background="Transparent" BorderThickness="0" Focusable="False"/>
+                                        <RepeatButton Command="Slider.IncreaseLarge" Focusable="False" IsTabStop="False">
+                                            <RepeatButton.Template>
+                                                <ControlTemplate TargetType="RepeatButton">
+                                                    <Border Height="4" Background="Transparent" />
+                                                </ControlTemplate>
+                                            </RepeatButton.Template>
+                                        </RepeatButton>
                                     </Track.IncreaseRepeatButton>
                                     <Track.Thumb>
                                         <Thumb>
