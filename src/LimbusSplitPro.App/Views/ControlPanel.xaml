@@ -81,6 +81,14 @@
                             <DataTemplate>
                                 <Border x:Name="stemCard" CornerRadius="10" Padding="10" Margin="3" BorderThickness="1.5" Cursor="Hand"
                                         Background="#12141A" BorderBrush="#1E2230" MouseLeftButtonDown="OnStemCardClick">
+                                    <Border.ToolTip>
+                                        <ToolTip Background="#0D0F14" BorderBrush="#00F0FF" BorderThickness="1" Foreground="#F0F0F5" Padding="10,6" HasDropShadow="True">
+                                            <StackPanel MaxWidth="250">
+                                                <TextBlock Text="{Binding DisplayName}" FontWeight="Bold" Foreground="#00F0FF" FontSize="11" Margin="0,0,0,3" />
+                                                <TextBlock Text="{Binding FullDescription}" TextWrapping="Wrap" FontSize="11" Foreground="#A0A5B1" />
+                                            </StackPanel>
+                                        </ToolTip>
+                                    </Border.ToolTip>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
