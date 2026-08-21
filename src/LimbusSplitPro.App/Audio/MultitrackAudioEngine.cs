@@ -1,64 +1,23 @@
+using System.IO;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
-using System.IO;
 using LimbusSplitPro.Core.Interfaces;
 using LimbusSplitPro.Core.Models;
 
 namespace LimbusSplitPro.App.Audio;
 
-/// <summary>
-/// A custom mixer that holds onto its inputs forever — it never removes them when they
-/// return 0 samples. This prevents NAudio's MixingSampleProvider from silently dropping
-/// tracks after end-of-stream, which would break seeking and replay.
-/// </summary>
-public class PersistentMixer : ISampleProvider
-{
-    private readonly List<ISampleProvider> _sources = new();
-    private float[] _tempBuffer = Array.Empty<float>();
-
-    public WaveFormat WaveFormat { get; }
-
-    public PersistentMixer(WaveFormat waveFormat)
-    {
-        WaveFormat = waveFormat;
-    }
-
-    public void AddInput(ISampleProvider source)
-    {
-        _sources.Add(source);
-    }
-
-    public int Read(float[] buffer, int offset, int count)
-    {
-        // Zero-fill the output buffer first (mix into silence)
-        Array.Clear(buffer, offset, count);
-
-        if (_tempBuffer.Length < count)
-            _tempBuffer = new float[count];
-
-        // Mix each source into the buffer
-        foreach (var source in _sources)
-        {
-            int read = source.Read(_tempBuffer, 0, count);
-            // Mix whatever was read (ignore 0-return — just means silence for this tick)
-            for (int i = 0; i < read; i++)
-                buffer[offset + i] += _tempBuffer[i];
-        }
-
-        // Always report 'count' samples so WaveOutEvent never stops on its own
-        return count;
-    }
-}
-
 public class MultitrackAudioEngine : IAudioEngine
 {
     private IWavePlayer? _waveOut;
-    private PersistentMixer? _mixer;
+    private MixingSampleProvider? _mixer;
     private MasterMixSampleProvider? _masterProvider;
     private readonly List<AudioFileReader> _trackReaders = new();
     private readonly Dictionary<string, TrackSampleProvider> _trackProviders = new();
     private readonly List<TrackState> _trackStates = new();
     private readonly System.Timers.Timer _positionTimer;
+
+    // Tracks whether playback stopped because the song reached its natural end
+    // (vs. user manually stopping). Used by Play() to decide whether to rewind to 0.
     private bool _reachedEnd = false;
 
     public LimbusPlaybackState CurrentState { get; private set; } = new LimbusPlaybackState();
@@ -112,8 +71,11 @@ public class MultitrackAudioEngine : IAudioEngine
         var outputFormat = WaveFormat.CreateIeeeFloatWaveFormat(
             masterFormat.SampleRate, Math.Max(masterFormat.Channels, 2));
 
-        // Use our PersistentMixer so inputs are never dropped at end-of-stream
-        _mixer = new PersistentMixer(outputFormat);
+        // MixingSampleProvider normally removes inputs that return 0 samples.
+        // TrackSampleProvider now returns silence (not 0) at EOF, so inputs
+        // are NEVER removed. This makes seek and replay work without rebuilding
+        // the audio graph.
+        _mixer = new MixingSampleProvider(outputFormat) { ReadFully = true };
 
         foreach (var provider in _trackProviders.Values)
         {
@@ -125,7 +87,7 @@ public class MultitrackAudioEngine : IAudioEngine
             if (input.WaveFormat.SampleRate != outputFormat.SampleRate)
                 input = new WdlResamplingSampleProvider(input, outputFormat.SampleRate);
 
-            _mixer.AddInput(input);
+            _mixer.AddMixerInput(input);
         }
 
         _masterProvider = new MasterMixSampleProvider(_mixer);
@@ -161,16 +123,16 @@ public class MultitrackAudioEngine : IAudioEngine
             meterDict[kvp.Key] = (kvp.Value.PeakLeft, kvp.Value.PeakRight);
         MetersUpdated?.Invoke(this, meterDict);
 
-        // Detect end of song by position (WaveOutEvent no longer self-stops because
-        // PersistentMixer always returns 'count' samples)
+        // Detect natural end-of-song by position.
+        // We pause (not stop) WaveOutEvent so it stays initialized for replay.
         if (current >= CurrentState.TotalDuration && CurrentState.TotalDuration > TimeSpan.Zero)
         {
             _reachedEnd = true;
             _positionTimer.Stop();
-            if (_waveOut != null)
-                try { _waveOut.Pause(); } catch { }
+            try { _waveOut?.Pause(); } catch { }
 
             CurrentState.Status = PlaybackStatus.Stopped;
+            // Keep CurrentTime at TotalDuration so the slider shows 100%
             CurrentState.CurrentTime = CurrentState.TotalDuration;
             PositionChanged?.Invoke(this, CurrentState.TotalDuration);
             PlaybackStateChanged?.Invoke(this, CurrentState);
@@ -181,7 +143,7 @@ public class MultitrackAudioEngine : IAudioEngine
     {
         if (_waveOut == null || _trackReaders.Count == 0) return;
 
-        // If we reached the end, reset all readers to position 0
+        // If the song had played to its natural end, rewind to 0 before playing again.
         if (_reachedEnd)
         {
             foreach (var reader in _trackReaders)
@@ -190,16 +152,16 @@ public class MultitrackAudioEngine : IAudioEngine
             _reachedEnd = false;
         }
 
-        // WaveOutEvent was paused (or is stopped) — just call Play() again.
-        // Because PersistentMixer always returns samples, WaveOutEvent stays
-        // in its pipeline and .Play() resumes correctly from current position.
+        // WaveOutEvent was either paused or never started — Play() resumes from
+        // the current reader position (which was set by Seek() if the user dragged
+        // the slider, or 0 if we just rewound above).
         try
         {
             _waveOut.Play();
         }
         catch
         {
-            // If Play() fails try a full re-init
+            // Last-resort: fully re-initialize the audio device
             try
             {
                 _waveOut.Stop();
@@ -229,6 +191,7 @@ public class MultitrackAudioEngine : IAudioEngine
     {
         _positionTimer.Stop();
         _reachedEnd = false;
+
         if (_waveOut != null)
             try { _waveOut.Stop(); } catch { }
 
@@ -246,7 +209,9 @@ public class MultitrackAudioEngine : IAudioEngine
         TimeSpan clamped = position < TimeSpan.Zero ? TimeSpan.Zero :
                            position > CurrentState.TotalDuration ? CurrentState.TotalDuration : position;
 
-        _reachedEnd = false; // Clear end-of-song flag so next Play() doesn't reset to 0
+        // Clear the end-of-song flag so Play() after a seek plays from the new position
+        // instead of rewinding to 0.
+        _reachedEnd = false;
 
         lock (_trackReaders)
         {
