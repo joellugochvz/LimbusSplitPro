@@ -277,7 +277,7 @@
 
                                             <!-- Track name + format (double click volume readout to reset) -->
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center"
-                                                        PreviewMouseDoubleClick="OnVolumeSliderMouseDoubleClick"
+                                                        Control.PreviewMouseDoubleClick="OnVolumeSliderMouseDoubleClick"
                                                         Cursor="Hand" ToolTip="Doble clic para restablecer volumen a 100%">
                                                 <TextBlock Text="{Binding DisplayName}" Foreground="White" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Foreground="#6B7280" FontSize="10">
@@ -295,7 +295,7 @@
                                             <!-- Volume slider (double-click resets to 100%) -->
                                             <Slider Grid.Column="3" Minimum="0.0" Maximum="1.5" Value="{Binding Volume}"
                                                     VerticalAlignment="Center"
-                                                    PreviewMouseDoubleClick="OnVolumeSliderMouseDoubleClick"
+                                                    Control.PreviewMouseDoubleClick="OnVolumeSliderMouseDoubleClick"
                                                     ToolTip="Doble clic para restablecer a 100%" />
                                         </Grid>
                                     </Grid>
