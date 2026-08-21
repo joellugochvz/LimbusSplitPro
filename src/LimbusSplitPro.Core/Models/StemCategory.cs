@@ -64,10 +64,10 @@ public class StemCategory : INotifyPropertyChanged
             new StemCategory { Id = "guitar", DisplayName = "Guitarra", Description = "Guitarras rítmicas y solo", FullDescription = "Guitarras acústicas y eléctricas (rítmicas y solistas).", Group = StemGroup.Guitar, IsSelected = false, IsAvailable = true, IconKey = "GuitarAcoustic", DefaultColorHex = "#8B5CF6" },
 
             // Piano group — Rosa / Pink
-            new StemCategory { Id = "piano", DisplayName = "Piano y Teclados", Description = "Pianos y sintetizadores", FullDescription = "Pianos acústicos, teclados digitales y sintetizadores.", Group = StemGroup.Piano, IsSelected = false, IsAvailable = true, IconKey = "Piano", DefaultColorHex = "#EC4899" },
+            new StemCategory { Id = "piano", DisplayName = "Piano y Teclados", Description = "Pianos acústicos y eléctricos", FullDescription = "Pianos acústicos (cola/vertical) y pianos eléctricos (Rhodes/Wurlitzer). Los sintetizadores electrónicos se alojan en Other.", Group = StemGroup.Piano, IsSelected = false, IsAvailable = true, IconKey = "Piano", DefaultColorHex = "#EC4899" },
 
             // Other group (Residual) — Azul / Blue
-            new StemCategory { Id = "other", DisplayName = "Other (Residual)", Description = "Acompañamiento restante", FullDescription = "Cualquier instrumento o acompañamiento no seleccionado previamente.", Group = StemGroup.Other, IsSelected = true, IconKey = "MusicNote", DefaultColorHex = "#3B82F6" }
+            new StemCategory { Id = "other", DisplayName = "Other (Residual)", Description = "Acompañamiento restante", FullDescription = "Cualquier instrumento no seleccionado previamente (incluye sintetizadores electrónicos, vientos, cuerdas y efectos).", Group = StemGroup.Other, IsSelected = true, IconKey = "MusicNote", DefaultColorHex = "#3B82F6" }
         };
     }
 }
