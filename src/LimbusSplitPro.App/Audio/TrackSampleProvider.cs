@@ -42,6 +42,16 @@ public class TrackSampleProvider : ISampleProvider
     public int Read(float[] buffer, int offset, int count)
     {
         int samplesRead = _source.Read(buffer, offset, count);
+
+        // If source reached EOF, fill remainder with silence and still report 'count'.
+        // This prevents PersistentMixer from having a gap and keeps the pipeline alive
+        // so seeking and replay work without rebuilding the audio graph.
+        if (samplesRead < count)
+        {
+            Array.Clear(buffer, offset + samplesRead, count - samplesRead);
+            samplesRead = count;
+        }
+
         if (samplesRead == 0) return 0;
 
         // Determine effective mute state based on solo/mute matrix
