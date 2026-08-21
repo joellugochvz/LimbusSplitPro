@@ -8,6 +8,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>LimbusSplitPro.App</RootNamespace>
     <AssemblyName>LimbusSplitPro</AssemblyName>
+    <ApplicationIcon>Assets\app_icon.ico</ApplicationIcon>
     <PublishSingleFile>false</PublishSingleFile>
     <SelfContained>true</SelfContained>
   </PropertyGroup>
@@ -28,6 +29,11 @@
       <Link>LimbusEngine\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\app_icon.ico" />
+    <Resource Include="Assets\app_icon.png" />
   </ItemGroup>
 
 </Project>

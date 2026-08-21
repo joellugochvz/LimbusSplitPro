@@ -123,19 +123,15 @@ public class MultitrackAudioEngine : IAudioEngine
             meterDict[kvp.Key] = (kvp.Value.PeakLeft, kvp.Value.PeakRight);
         MetersUpdated?.Invoke(this, meterDict);
 
-        // Detect natural end-of-song by position.
-        // We pause (not stop) WaveOutEvent so it stays initialized for replay.
+        // Auto-loop: when the song reaches its natural end, rewind all readers to 0
+        // and continue playing seamlessly (the WaveOutEvent stays alive, no re-init needed).
         if (current >= CurrentState.TotalDuration && CurrentState.TotalDuration > TimeSpan.Zero)
         {
-            _reachedEnd = true;
-            _positionTimer.Stop();
-            try { _waveOut?.Pause(); } catch { }
-
-            CurrentState.Status = PlaybackStatus.Stopped;
-            // Keep CurrentTime at TotalDuration so the slider shows 100%
-            CurrentState.CurrentTime = CurrentState.TotalDuration;
-            PositionChanged?.Invoke(this, CurrentState.TotalDuration);
-            PlaybackStateChanged?.Invoke(this, CurrentState);
+            foreach (var reader in _trackReaders)
+                reader.CurrentTime = TimeSpan.Zero;
+            CurrentState.CurrentTime = TimeSpan.Zero;
+            PositionChanged?.Invoke(this, TimeSpan.Zero);
+            // Status stays Playing — loop continues without any interruption
         }
     }
 

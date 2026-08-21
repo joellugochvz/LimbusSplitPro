@@ -6,6 +6,7 @@
         xmlns:views="clr-namespace:LimbusSplitPro.App.Views"
         mc:Ignorable="d"
         Title="Limbus Split Pro" Height="780" Width="1200" MinHeight="600" MinWidth="900"
+        Icon="Assets/app_icon.ico"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         Background="#0A0A0F"
