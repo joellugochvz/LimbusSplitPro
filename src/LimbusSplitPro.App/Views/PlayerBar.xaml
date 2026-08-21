@@ -234,8 +234,9 @@
                         </Button.Template>
                     </Button>
 
-                    <!-- Exportar Mezcla: Cyan styled -->
-                    <Button Command="{Binding ExportMixCommand}" Padding="12,6" Cursor="Hand">
+                    <!-- Exportar Mezcla: Cyan styled (visible only when stems are loaded) -->
+                    <Button Command="{Binding ExportMixCommand}" Padding="12,6" Cursor="Hand"
+                            Visibility="{Binding HasResults, Converter={StaticResource BoolToVisibilityConverter}}">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="exportBorder" Background="#0A1A1F" CornerRadius="8" BorderBrush="#00F0FF" BorderThickness="1.5" Padding="{TemplateBinding Padding}">
