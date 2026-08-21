@@ -177,7 +177,33 @@
 
                 <!-- Status Messages -->
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0">
-                    <TextBlock Text="{Binding CurrentStageText}" Foreground="White" FontSize="11" TextTrimming="CharacterEllipsis" />
+                    <!-- Stage text with optional neon-green check -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Neon green vector check (only when project is loaded / separation done) -->
+                        <Viewbox Width="13" Height="13" Margin="0,0,5,0" VerticalAlignment="Center">
+                            <Viewbox.Style>
+                                <Style TargetType="Viewbox">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsProjectLoaded}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Viewbox.Style>
+                            <Canvas Width="12" Height="12">
+                                <Path Data="M 1,6 L 4.5,10 L 11,2"
+                                      Stroke="#22FF77" StrokeThickness="2"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      Fill="Transparent">
+                                    <Path.Effect>
+                                        <DropShadowEffect Color="#22FF77" BlurRadius="6" ShadowDepth="0" Opacity="0.8"/>
+                                    </Path.Effect>
+                                </Path>
+                            </Canvas>
+                        </Viewbox>
+                        <TextBlock Text="{Binding CurrentStageText}" Foreground="White" FontSize="11" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                    </StackPanel>
                     <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProcessingProgress}" Height="3" Margin="0,4,0,0" 
                                  Foreground="#00F0FF" Background="#1E2230" BorderThickness="0"
                                  Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}" />

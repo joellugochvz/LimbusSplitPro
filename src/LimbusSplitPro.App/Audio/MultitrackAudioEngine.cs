@@ -131,22 +131,56 @@ public class MultitrackAudioEngine : IAudioEngine
             }
             MetersUpdated?.Invoke(this, meterDict);
 
-            if (current >= CurrentState.TotalDuration)
+            // Detect end of song: either by position or if WaveOutEvent stopped on its own
+            bool reachedEnd = current >= CurrentState.TotalDuration && CurrentState.TotalDuration > TimeSpan.Zero;
+            bool deviceDone = _waveOut != null && _waveOut.PlaybackState == PlaybackState.Stopped;
+            if (reachedEnd || deviceDone)
             {
-                Stop();
+                // Stop timer and update state but keep readers at end (not at zero)
+                // so the UI shows 100% and the user can press Play to restart from 0
+                _positionTimer.Stop();
+                CurrentState.Status = PlaybackStatus.Stopped;
+                CurrentState.CurrentTime = CurrentState.TotalDuration;
+                PositionChanged?.Invoke(this, CurrentState.TotalDuration);
+                PlaybackStateChanged?.Invoke(this, CurrentState);
             }
         }
     }
 
     public void Play()
     {
-        if (_waveOut != null && _trackReaders.Count > 0)
+        if (_waveOut == null || _trackReaders.Count == 0 || _masterProvider == null) return;
+
+        // If playback reached the end, WaveOutEvent is in Stopped state and can't be
+        // resumed with Play() alone. We must seek to 0, re-create and re-Init the device.
+        bool atEnd = CurrentState.CurrentTime >= CurrentState.TotalDuration && CurrentState.TotalDuration > TimeSpan.Zero;
+        bool deviceStopped = _waveOut.PlaybackState == PlaybackState.Stopped;
+
+        if (atEnd || deviceStopped)
         {
-            _waveOut.Play();
-            CurrentState.Status = PlaybackStatus.Playing;
-            _positionTimer.Start();
-            PlaybackStateChanged?.Invoke(this, CurrentState);
+            // Reset all readers to the beginning
+            foreach (var reader in _trackReaders)
+                reader.CurrentTime = TimeSpan.Zero;
+            CurrentState.CurrentTime = TimeSpan.Zero;
+
+            // Re-initialize the WaveOutEvent so it can play again
+            try
+            {
+                _waveOut.Stop();
+                _waveOut.Dispose();
+                _waveOut = new WaveOutEvent { DesiredLatency = 150, NumberOfBuffers = 3 };
+                _waveOut.Init(_masterProvider);
+            }
+            catch
+            {
+                return;
+            }
         }
+
+        _waveOut.Play();
+        CurrentState.Status = PlaybackStatus.Playing;
+        _positionTimer.Start();
+        PlaybackStateChanged?.Invoke(this, CurrentState);
     }
 
     public void Pause()

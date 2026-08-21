@@ -66,6 +66,9 @@ public partial class MainViewModel : ObservableObject
     public bool HasNoResults => MixerTracks.Count == 0;
 
     [ObservableProperty]
+    private bool _isProjectLoaded = false;
+
+    [ObservableProperty]
     private double _seekSliderValue;
 
     [ObservableProperty]
@@ -245,7 +248,8 @@ public partial class MainViewModel : ObservableObject
             OutputFolderPath = folderPath;
             StatusMessage = $"{wavFiles.Length} pista(s) cargadas desde: {Path.GetFileName(folderPath)}";
             SeparationStateText = "Proyecto cargado desde carpeta.";
-            CurrentStageText = "✅ Proyecto cargado";
+            CurrentStageText = "Proyecto cargado";
+            IsProjectLoaded = true;
         }
         catch (Exception ex)
         {
@@ -288,7 +292,7 @@ public partial class MainViewModel : ObservableObject
 
         // Give UI time to update, then show wait message
         await Task.Delay(500);
-        CurrentStageText = "⏳ Espera unos minutos en lo que termino de separar...";
+        CurrentStageText = "Espera unos minutos en lo que termino de separar...";
         StatusMessage = "El motor de IA está procesando tu canción. Esto puede tardar unos minutos.";
 
         var job = new SeparationJob
@@ -308,7 +312,7 @@ public partial class MainViewModel : ObservableObject
                 IsProcessing = false; // Must be false BEFORE loading mixer so State 3 triggers
                 StatusMessage = "¡Separación completada con éxito!";
                 SeparationStateText = "La exportación está preparada.";
-                CurrentStageText = "✅ Separación completada";
+                CurrentStageText = "Separación completada";
                 LoadGeneratedTracksIntoMixer(result.GeneratedStemFiles);
             }
             else
