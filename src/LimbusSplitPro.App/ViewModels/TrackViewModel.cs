@@ -65,4 +65,10 @@ public partial class TrackViewModel : ObservableObject
     {
         IsSolo = !IsSolo;
     }
+
+    [RelayCommand]
+    private void ResetVolume()
+    {
+        Volume = 1.0f;
+    }
 }

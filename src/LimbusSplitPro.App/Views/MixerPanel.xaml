@@ -126,10 +126,38 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
                         <TextBlock Text="RESULTADO" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,4" />
                         <TextBlock Text="La exportación está preparada." Foreground="White" FontSize="20" FontWeight="Bold" />
                     </StackPanel>
+
+                    <!-- Abrir ubicación de archivos button (top of right panel, above transport buttons and stems) -->
+                    <Button Grid.Column="1" Command="{Binding OpenOutputFolderCommand}"
+                            VerticalAlignment="Center" Cursor="Hand" Padding="12,8">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="folderBorder" Background="#12141A" BorderBrush="#00F0FF" BorderThickness="1.5" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="📁 " FontSize="13" VerticalAlignment="Center" />
+                                        <TextBlock Text="Abrir ubicación de archivos" FontSize="12" FontWeight="SemiBold" Foreground="#00F0FF" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="folderBorder" Property="Background" Value="#0D2A32" />
+                                        <Setter TargetName="folderBorder" Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#00F0FF" BlurRadius="12" ShadowDepth="0" Opacity="0.4" />
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="folderBorder" Property="Background" Value="#0A1E24" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </Grid>
 
                 <!-- Info + Transport Bar -->
@@ -247,8 +275,10 @@
                                                 <TextBlock Text="🎵" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" />
                                             </Border>
 
-                                            <!-- Track name + format -->
-                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <!-- Track name + format (double click volume readout to reset) -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center"
+                                                        PreviewMouseDoubleClick="OnVolumeSliderMouseDoubleClick"
+                                                        Cursor="Hand" ToolTip="Doble clic para restablecer volumen a 100%">
                                                 <TextBlock Text="{Binding DisplayName}" Foreground="White" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Foreground="#6B7280" FontSize="10">
                                                     <Run Text="WAV  ·  " />
@@ -262,8 +292,11 @@
                                                 <ToggleButton Style="{StaticResource SoloButtonStyle}" IsChecked="{Binding IsSolo}" />
                                             </StackPanel>
 
-                                            <!-- Volume slider -->
-                                            <Slider Grid.Column="3" Minimum="0.0" Maximum="1.5" Value="{Binding Volume}" VerticalAlignment="Center" />
+                                            <!-- Volume slider (double-click resets to 100%) -->
+                                            <Slider Grid.Column="3" Minimum="0.0" Maximum="1.5" Value="{Binding Volume}"
+                                                    VerticalAlignment="Center"
+                                                    PreviewMouseDoubleClick="OnVolumeSliderMouseDoubleClick"
+                                                    ToolTip="Doble clic para restablecer a 100%" />
                                         </Grid>
                                     </Grid>
                                 </Border>
