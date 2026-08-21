@@ -24,7 +24,7 @@ public partial class PlayerBar : UserControl
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "Abrir Proyecto — Selecciona la carpeta con los stems WAV"
+            Title = "Cargar Proyecto — Selecciona la carpeta con los stems WAV"
         };
 
         if (dialog.ShowDialog() == true && DataContext is MainViewModel vm)
