@@ -109,7 +109,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <TextBlock Text="Other reúne lo no seleccionado. Voces es la base: al elegir Voz principal, Coros o Efectos vocales se activa y exporta automáticamente."
+                    <TextBlock Text="Other reúne lo no seleccionado."
                                Foreground="#4B5563" FontSize="10" TextWrapping="Wrap" Margin="4,8,4,20" />
                 </StackPanel>
 
